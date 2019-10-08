@@ -1,17 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+﻿using System.Windows;
 
 namespace LogReceiver
 {
@@ -23,6 +10,16 @@ namespace LogReceiver
         public MainWindow()
         {
             InitializeComponent();
+            MainViewModel mainViewModel = new MainViewModel();
+            var parent = new Category { Name = "Parent" };
+            var child1 = new Category { Name = "Child1" };
+            var grandchild1 = new Category { Name = "Grandchild1" };
+            var grandchild2 = new Category { Name = "Grandchild2" };
+            child1.Children.Add(grandchild1);
+            child1.Children.Add(grandchild2);
+            parent.Children.Add(child1);
+            mainViewModel.Categories.Add(parent);
+            DataContext = mainViewModel;
         }
     }
 }
