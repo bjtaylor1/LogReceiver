@@ -1,22 +1,26 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Diagnostics;
+using System.Windows.Data;
+using Prism.Events;
 
 namespace LogReceiver
 {
-    public class MainViewModel
+    public class MainViewModel : Logger
     {
-        public ObservableCollection<Event> Events { get; } = new ObservableCollection<Event>();
+        public ListCollectionView Events { get; }
 
-        public ObservableCollection<Category> Categories { get; } = new ObservableCollection<Category>();
-    }
+        public MainViewModel(IEventAggregator eventAggregator) : base()
+        {
+            eventAggregator.GetEvent<MessageEvent>().Subscribe(AddMessage, ThreadOption.UIThread);
+        }
 
-    public class Category
-    {
-        public string Name { get; set; }
-        public ObservableCollection<Category> Children { get; } = new ObservableCollection<Category>();
+        private void AddLoggerRoot(string fullLoggerName)
+        {
+            AddChild(fullLoggerName.Split(new[] { '.' }));
+        }
+
+        private void AddMessage(MessageData msg)
+        {
+            Debug.WriteLine("Received a message");
+        }
     }
 }

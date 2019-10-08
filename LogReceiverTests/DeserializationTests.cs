@@ -14,7 +14,7 @@ namespace LogReceiverTests
         {
             var exampleMessage = "2019-10-08 16:59:23.0383|INFO|Payroll.MvcApplication|======= Application|Starting =======";
 
-            var @event = Event.Parse(exampleMessage);
+            var @event = MessageData.Parse(exampleMessage);
             Assert.AreEqual("======= Application|Starting =======", @event.Message);
         }
     }

@@ -7,10 +7,13 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
     <Grid>
-        <TreeView ItemsSource="{Binding Categories}">
+        <TreeView ItemsSource="{Binding ChildLoggers, IsAsync=True}">
             <TreeView.ItemTemplate>
-                <HierarchicalDataTemplate ItemsSource="{Binding Children}">
-                    <TextBlock Text="{Binding Name}"/>
+                <HierarchicalDataTemplate ItemsSource="{Binding ChildLoggers, IsAsync=True}">
+                    <StackPanel Orientation="Horizontal">
+                        <CheckBox IsChecked="{Binding IsSelected, IsAsync=True}"/>
+                        <TextBlock Text="{Binding Name}"/>
+                    </StackPanel>
                 </HierarchicalDataTemplate>
             </TreeView.ItemTemplate>
         </TreeView>

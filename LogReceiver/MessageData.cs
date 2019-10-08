@@ -1,14 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml.Serialization;
 
 namespace LogReceiver
 
 {
-    public class Event
+    public class MessageData
     {
         public DateTime TimeStamp { get; set; }
 
@@ -18,10 +13,10 @@ namespace LogReceiver
 
         public string Message { get; set; }
 
-        public static Event Parse(string input)
+        public static MessageData Parse(string input)
         {
             var parts = input.Split(new[] { '|' }, 4);
-            var @event = new Event
+            var @event = new MessageData
             {
                 TimeStamp = DateTime.Parse(parts[0]),
                 Level = parts[1],
