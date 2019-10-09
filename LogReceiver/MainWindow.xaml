@@ -8,11 +8,17 @@
         Title="MainWindow" Height="450" Width="800">
     <Grid>
         <TreeView ItemsSource="{Binding ChildLoggers, IsAsync=True}">
+            <!--<TreeView.ItemContainerStyle>
+                <Style TargetType="TreeViewItem">
+                    <Setter Property="IsExpanded" Value="True"/>
+                </Style>
+            </TreeView.ItemContainerStyle>-->
             <TreeView.ItemTemplate>
                 <HierarchicalDataTemplate ItemsSource="{Binding ChildLoggers, IsAsync=True}">
                     <StackPanel Orientation="Horizontal">
                         <CheckBox IsChecked="{Binding IsSelected, IsAsync=True}"/>
                         <TextBlock Text="{Binding Name}"/>
+                        <TextBlock Text="{Binding FullLoggerName}" Margin="10 0 0 0" FontStyle="Italic" Foreground="Gray"/>
                     </StackPanel>
                 </HierarchicalDataTemplate>
             </TreeView.ItemTemplate>

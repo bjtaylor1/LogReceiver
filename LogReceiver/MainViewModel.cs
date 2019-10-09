@@ -4,7 +4,7 @@ using Prism.Events;
 
 namespace LogReceiver
 {
-    public class MainViewModel : Logger
+    public class MainViewModel : LoggerNode
     {
         public ListCollectionView Events { get; }
 
@@ -13,14 +13,17 @@ namespace LogReceiver
             eventAggregator.GetEvent<MessageEvent>().Subscribe(AddMessage, ThreadOption.UIThread);
         }
 
-        private void AddLoggerRoot(string fullLoggerName)
+        public void AddLoggerRoot(string fullLoggerName)
         {
-            AddChild(fullLoggerName.Split(new[] { '.' }));
+            Debug.WriteLine($"Adding logger {fullLoggerName}");
+
+            AddChild(fullLoggerName.Split(new[] { '.' }), fullLoggerName);
+
         }
 
         private void AddMessage(MessageData msg)
         {
-            Debug.WriteLine("Received a message");
+            AddLoggerRoot(msg.Logger);
         }
     }
 }

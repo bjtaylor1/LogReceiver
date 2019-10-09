@@ -5,11 +5,21 @@ using System.Windows.Data;
 
 namespace LogReceiver
 {
-    public class Logger : INotifyPropertyChanged
+    public class LoggerNode : INotifyPropertyChanged
     {
         private bool isSelected;
+        private string fullLoggerName;
 
         public string Name { get; set; }
+
+        public string FullLoggerName
+        {
+            get => fullLoggerName; set
+            {
+                fullLoggerName = value;
+                PropertyChanged?.BeginInvoke(this, new PropertyChangedEventArgs(nameof(FullLoggerName)), null, null);
+            }
+        }
 
         public bool IsSelected
         {
@@ -17,7 +27,7 @@ namespace LogReceiver
             {
                 isSelected = value;
                 PropertyChanged?.BeginInvoke(this, new PropertyChangedEventArgs(nameof(IsSelected)), null, null);
-                foreach(var child in categories)
+                foreach (var child in categories)
                 {
                     child.IsSelected = value;
                 }
@@ -25,33 +35,38 @@ namespace LogReceiver
         }
 
         //need to be kept in sync
-        private readonly List<Logger> categories;
+        private readonly List<LoggerNode> categories;
         public ListCollectionView ChildLoggers { get; }
-        private readonly Dictionary<string, Logger> childrenDictionary = new Dictionary<string, Logger>();
+        private readonly Dictionary<string, LoggerNode> childrenDictionary = new Dictionary<string, LoggerNode>();
 
-        public Logger()
+        public LoggerNode()
         {
-            categories = new List<Logger>();
+            categories = new List<LoggerNode>();
             ChildLoggers = new ListCollectionView(categories) { IsLiveSorting = true };
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        public void AddChild(IEnumerable<string> parts)
+        public void AddChild(IEnumerable<string> parts, string fullLoggerName)
         {
-            Logger child;
+            LoggerNode child;
             var firstPart = parts.First();
             if (!childrenDictionary.TryGetValue(firstPart, out child))
             {
-                child = new Logger { Name = firstPart, IsSelected = true };
+                child = new LoggerNode { Name = firstPart, IsSelected = true };
                 categories.Add(child);
                 childrenDictionary.Add(firstPart, child);
             }
             var remaining = parts.Skip(1);
-            if(remaining.Any())
+            if (remaining.Any())
             {
-                child.AddChild(remaining);
+                child.AddChild(remaining, fullLoggerName);
             }
+            else
+            {
+                child.FullLoggerName = fullLoggerName;
+            }
+            ChildLoggers.Refresh();
         }
     }
 }
