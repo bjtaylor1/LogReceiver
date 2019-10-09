@@ -8,6 +8,8 @@ namespace LogReceiver
 {
     public class MainViewModel : LoggerNode
     {
+        public ItemAddedEvent itemAddedEvent { get; }
+
         private readonly List<MessageData> eventList;
         public ListCollectionView Events { get; }
 
@@ -21,7 +23,6 @@ namespace LogReceiver
         public void AddLoggerRoot(string fullLoggerName)
         {
             AddChild(fullLoggerName.Split(new[] { '.' }), fullLoggerName);
-
         }
 
         private void AddMessage(MessageData msg)

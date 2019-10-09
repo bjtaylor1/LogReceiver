@@ -13,6 +13,8 @@ namespace LogReceiver
 
         public string Message { get; set; }
 
+        public string SingleLineMessage { get; set; }
+
         public static MessageData Parse(string input)
         {
             var parts = input.Split(new[] { '|' }, 4);
@@ -21,7 +23,8 @@ namespace LogReceiver
                 TimeStamp = DateTime.Parse(parts[0]),
                 Level = parts[1],
                 Logger = parts[2],
-                Message = parts[3]
+                Message = parts[3],
+                SingleLineMessage = parts[3].Replace("\n", "").Replace("\r", "")
             };
             return @event;
         }

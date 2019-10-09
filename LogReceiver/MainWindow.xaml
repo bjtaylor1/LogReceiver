@@ -13,17 +13,13 @@
             <ColumnDefinition Width="1*"/>
         </Grid.ColumnDefinitions>
 
-        <DataGrid ItemsSource="{Binding Events}" AutoGenerateColumns="False"
+        <DataGrid ItemsSource="{Binding Events}" AutoGenerateColumns="False" x:Name="dataGrid"
                   HorizontalAlignment="Stretch"
                   GridLinesVisibility="None" CanUserAddRows="False" CanUserDeleteRows="False"
                   >
             <DataGrid.RowStyle>
                 <Style TargetType="DataGridRow">
                     <EventSetter Event="RequestBringIntoView" Handler="DataGridRow_RequestBringIntoView"/>
-                </Style>
-            </DataGrid.RowStyle>
-            <DataGrid.CellStyle>
-                <Style TargetType="DataGridCell">
                     <Style.Triggers>
                         <DataTrigger Binding="{Binding Level}" Value="TRACE">
                             <Setter Property="Foreground" Value="LightGray"/>
@@ -39,11 +35,18 @@
                         </DataTrigger>
                     </Style.Triggers>
                 </Style>
-            </DataGrid.CellStyle>
+            </DataGrid.RowStyle>
+
             <DataGrid.Columns>
                 <DataGridTextColumn Binding="{Binding TimeStamp}" Header="Time"/>
                 <DataGridTextColumn Binding="{Binding Logger}" Header="Logger"/>
-                <DataGridTextColumn Binding="{Binding Message}" Header="Message"/>
+                <DataGridTextColumn Binding="{Binding SingleLineMessage}" Header="Message">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="TextWrapping" Value="NoWrap"/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
             </DataGrid.Columns>
         </DataGrid>
         
