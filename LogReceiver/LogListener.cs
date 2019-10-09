@@ -15,11 +15,11 @@ namespace LogReceiver
     public static class LogListener
     {
         public static long Running = 0;
-        internal static async Task Listen(IEventAggregator eventAggregator)
+        internal static async Task Listen()
         {
             Debug.WriteLine("Starting Listen");
             var port = int.Parse(ConfigurationManager.AppSettings["port"]);
-            var messageEvent = eventAggregator.GetEvent<MessageEvent>();
+            var messageEvent = App.EventAggregator.Value.GetEvent<MessageEvent>();
             using (var udpClient = new UdpClient(port))
             {
                 var endPoint = new IPEndPoint(IPAddress.Any, port);

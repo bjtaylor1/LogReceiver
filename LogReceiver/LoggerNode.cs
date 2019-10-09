@@ -27,14 +27,37 @@ namespace LogReceiver
             {
                 if (isSelected != value)
                 {
-                    isSelected = value;
-                    BeginInvokePropertyChanged(nameof(IsSelected));
-                    foreach (var child in categories)
+                    SetSelected(value);
+                    var descendants = GetDescendants();
+                    foreach (var descendant in descendants)
                     {
-                        child.IsSelected = value;
+                        descendant.SetSelected(value);
                     }
+                    var loggers = descendants.Select(d => d.FullLoggerName)
+                        .Where(f => !string.IsNullOrEmpty(f))
+                        .ToArray();
+                    var loggerToggleEventPayload = new LoggerToggleEventPayload
+                    {
+                        Loggers = loggers,
+                        Selected = value
+                    };
+                    App.EventAggregator.Value.GetEvent<LoggerToggleEvent>().Publish(loggerToggleEventPayload);
                 }
             }
+        }
+
+        private void SetSelected(bool value)
+        {
+            isSelected = value;
+            BeginInvokePropertyChanged(nameof(IsSelected));
+        }
+
+        private List<LoggerNode> GetDescendants()
+        {
+            var descendants = new List<LoggerNode>();
+            descendants.AddRange(childLoggersList);
+            descendants.AddRange(childLoggersList.SelectMany(c => c.GetDescendants()));
+            return descendants;
         }
 
         public bool IsExpanded
@@ -51,36 +74,37 @@ namespace LogReceiver
         }
 
         //need to be kept in sync
-        private readonly List<LoggerNode> categories;
+        private readonly List<LoggerNode> childLoggersList;
         public ListCollectionView ChildLoggers { get; }
         private readonly Dictionary<string, LoggerNode> childrenDictionary = new Dictionary<string, LoggerNode>();
 
         public LoggerNode()
         {
-            categories = new List<LoggerNode>();
-            ChildLoggers = new ListCollectionView(categories) { IsLiveSorting = true };
+            childLoggersList = new List<LoggerNode>();
+            ChildLoggers = new ListCollectionView(childLoggersList) { IsLiveSorting = true };
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        public void AddChild(IEnumerable<string> parts, string fullLoggerName)
+        public void AddChild(IEnumerable<string> parts, string fullLoggerName, HashSet<string> loggersAdded)
         {
             LoggerNode child;
             var firstPart = parts.First();
             if (!childrenDictionary.TryGetValue(firstPart, out child))
             {
                 child = new LoggerNode { Name = firstPart, IsSelected = true, IsExpanded = true };
-                categories.Add(child);
+                childLoggersList.Add(child);
                 childrenDictionary.Add(firstPart, child);
             }
             var remaining = parts.Skip(1);
             if (remaining.Any())
             {
-                child.AddChild(remaining, fullLoggerName);
+                child.AddChild(remaining, fullLoggerName, loggersAdded);
             }
             else
             {
                 child.FullLoggerName = fullLoggerName;
+                loggersAdded.Add(fullLoggerName);
             }
             ChildLoggers.Refresh();
         }

@@ -1,5 +1,4 @@
 ﻿using Prism.Events;
-using System;
 using System.Collections.Specialized;
 using System.Threading.Tasks;
 using System.Windows;
@@ -18,10 +17,9 @@ namespace LogReceiver
         public MainWindow()
         {
             InitializeComponent();
-            var eventAggregator = new EventAggregator();
-            MainViewModel mainViewModel = new MainViewModel(eventAggregator);
+            MainViewModel mainViewModel = new MainViewModel();
             DataContext = mainViewModel;
-            Task.Run(() => LogListener.Listen(eventAggregator));
+            Task.Run(() => LogListener.Listen());
             dataGrid.Loaded += HandleDataGridLoaded;
         }
 

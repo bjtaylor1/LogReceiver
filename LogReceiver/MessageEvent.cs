@@ -7,9 +7,4 @@ namespace LogReceiver
     {
 
     }
-
-    public class ItemAddedEvent : PubSubEvent
-    {
-
-    }
 }

@@ -71,6 +71,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="LoggerNode.cs" />
+    <Compile Include="LoggerToggleEvent.cs" />
     <Compile Include="LogListener.cs" />
     <Compile Include="MainViewModel.cs" />
     <Compile Include="MainWindow.xaml.cs">
