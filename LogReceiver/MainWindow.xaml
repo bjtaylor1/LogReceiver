@@ -13,43 +13,57 @@
             <ColumnDefinition Width="1*"/>
         </Grid.ColumnDefinitions>
 
-        <DataGrid ItemsSource="{Binding Events}" AutoGenerateColumns="False" x:Name="dataGrid"
-                  HorizontalAlignment="Stretch"
-                  GridLinesVisibility="None" CanUserAddRows="False" CanUserDeleteRows="False"
-                  >
-            <DataGrid.RowStyle>
-                <Style TargetType="DataGridRow">
-                    <EventSetter Event="RequestBringIntoView" Handler="DataGridRow_RequestBringIntoView"/>
-                    <Style.Triggers>
-                        <DataTrigger Binding="{Binding Level}" Value="TRACE">
-                            <Setter Property="Foreground" Value="LightGray"/>
-                        </DataTrigger>
-                        <DataTrigger Binding="{Binding Level}" Value="INFO">
-                            <Setter Property="Foreground" Value="Gray"/>
-                        </DataTrigger>
-                        <DataTrigger Binding="{Binding Level}" Value="WARN">
-                            <Setter Property="Foreground" Value="Orange"/>
-                        </DataTrigger>
-                        <DataTrigger Binding="{Binding Level}" Value="ERROR">
-                            <Setter Property="Foreground" Value="Red"/>
-                        </DataTrigger>
-                    </Style.Triggers>
-                </Style>
-            </DataGrid.RowStyle>
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="6*"/>
+                <RowDefinition Height="8"/>
+                <RowDefinition Height="4*"/>
+            </Grid.RowDefinitions>
+            
+            <DataGrid ItemsSource="{Binding Events}" AutoGenerateColumns="False" x:Name="dataGrid"
+                      HorizontalAlignment="Stretch"
+                      GridLinesVisibility="None" CanUserAddRows="False" CanUserDeleteRows="False"
+                      SelectedItem="{Binding SelectedMessage}"
+                      >
+                <DataGrid.RowStyle>
+                    <Style TargetType="DataGridRow">
+                        <EventSetter Event="RequestBringIntoView" Handler="DataGridRow_RequestBringIntoView"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Level}" Value="TRACE">
+                                <Setter Property="Foreground" Value="LightGray"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Level}" Value="INFO">
+                                <Setter Property="Foreground" Value="Gray"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Level}" Value="WARN">
+                                <Setter Property="Foreground" Value="Orange"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Level}" Value="ERROR">
+                                <Setter Property="Foreground" Value="Red"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </DataGrid.RowStyle>
 
-            <DataGrid.Columns>
-                <DataGridTextColumn Binding="{Binding TimeStamp}" Header="Time"/>
-                <DataGridTextColumn Binding="{Binding Logger}" Header="Logger"/>
-                <DataGridTextColumn Binding="{Binding SingleLineMessage}" Header="Message">
-                    <DataGridTextColumn.ElementStyle>
-                        <Style TargetType="TextBlock">
-                            <Setter Property="TextWrapping" Value="NoWrap"/>
-                        </Style>
-                    </DataGridTextColumn.ElementStyle>
-                </DataGridTextColumn>
-            </DataGrid.Columns>
-        </DataGrid>
-        
+                <DataGrid.Columns>
+                    <DataGridTextColumn Binding="{Binding TimeStamp}" Header="Time"/>
+                    <DataGridTextColumn Binding="{Binding Logger}" Header="Logger"/>
+                    <DataGridTextColumn Binding="{Binding SingleLineMessage}" Header="Message">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="TextWrapping" Value="NoWrap"/>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+
+            <GridSplitter Grid.Row="1" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" ResizeBehavior="PreviousAndNext" ResizeDirection="Rows"/>
+
+            <TextBox IsReadOnly="True" Grid.Row="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                     Text="{Binding SelectedMessage.Message}"/>
+        </Grid>
+
         <GridSplitter Grid.Column="1" ResizeDirection="Columns" HorizontalAlignment="Stretch" ResizeBehavior="PreviousAndNext"/>
         <TreeView ItemsSource="{Binding ChildLoggers, IsAsync=True}" Grid.Column="2" BorderThickness="0">
             <TreeView.ItemContainerStyle>

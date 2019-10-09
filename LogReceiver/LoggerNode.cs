@@ -17,7 +17,7 @@ namespace LogReceiver
             get => fullLoggerName; set
             {
                 fullLoggerName = value;
-                PropertyChanged?.BeginInvoke(this, new PropertyChangedEventArgs(nameof(FullLoggerName)), null, null);
+                BeginInvokePropertyChanged(nameof(FullLoggerName));
             }
         }
 
@@ -28,7 +28,7 @@ namespace LogReceiver
                 if (isSelected != value)
                 {
                     isSelected = value;
-                    PropertyChanged?.BeginInvoke(this, new PropertyChangedEventArgs(nameof(IsSelected)), null, null);
+                    BeginInvokePropertyChanged(nameof(IsSelected));
                     foreach (var child in categories)
                     {
                         child.IsSelected = value;
@@ -45,7 +45,7 @@ namespace LogReceiver
                 if (isExpanded != value)
                 {
                     isExpanded = value;
-                    PropertyChanged?.BeginInvoke(this, new PropertyChangedEventArgs(nameof(IsExpanded)), null, null);
+                    BeginInvokePropertyChanged(nameof(IsExpanded));
                 }
             }
         }
@@ -83,6 +83,11 @@ namespace LogReceiver
                 child.FullLoggerName = fullLoggerName;
             }
             ChildLoggers.Refresh();
+        }
+
+        protected void BeginInvokePropertyChanged(string propertyName)
+        {
+            PropertyChanged?.BeginInvoke(this, new PropertyChangedEventArgs(propertyName), null, null);
         }
     }
 }

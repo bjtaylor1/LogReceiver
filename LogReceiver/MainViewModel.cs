@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using System.Diagnostics;
+﻿using System.Collections.Generic;
 using System.Windows.Data;
 using Prism.Events;
 
@@ -11,7 +9,21 @@ namespace LogReceiver
         public ItemAddedEvent itemAddedEvent { get; }
 
         private readonly List<MessageData> eventList;
+        private MessageData selectedMessage;
+
         public ListCollectionView Events { get; }
+
+        public MessageData SelectedMessage
+        {
+            get => selectedMessage; set
+            {
+                if (selectedMessage != value)
+                {
+                    selectedMessage = value;
+                    BeginInvokePropertyChanged(nameof(SelectedMessage));
+                }
+            }
+        }
 
         public MainViewModel(IEventAggregator eventAggregator) : base()
         {
