@@ -29,6 +29,7 @@ namespace LogReceiver
                     {
                         var result = await udpClient.ReceiveAsync();
                         var resultString = Encoding.UTF8.GetString(result.Buffer);
+                        Debug.WriteLine(resultString);
                         var messageData = MessageData.Parse(resultString);
                         messageEvent.Publish(messageData);
                     }

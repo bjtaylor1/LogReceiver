@@ -1,4 +1,5 @@
 ﻿using Prism.Events;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Windows;
 
@@ -16,6 +17,11 @@ namespace LogReceiver
             MainViewModel mainViewModel = new MainViewModel(eventAggregator);
             DataContext = mainViewModel;
             Task.Run(() => LogListener.Listen(eventAggregator));
+        }
+
+        private void DataGridRow_RequestBringIntoView(object sender, RequestBringIntoViewEventArgs e)
+        {
+            e.Handled = true;
         }
     }
 }
