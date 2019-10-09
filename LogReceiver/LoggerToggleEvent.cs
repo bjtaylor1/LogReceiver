@@ -1,5 +1,4 @@
 ﻿using Prism.Events;
-using System.Collections.Generic;
 
 namespace LogReceiver
 {

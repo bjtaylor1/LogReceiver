@@ -79,6 +79,7 @@
                     </StackPanel>
                 </HierarchicalDataTemplate>
             </TreeView.ItemTemplate>
+            
         </TreeView>
     </Grid>
 </Window>

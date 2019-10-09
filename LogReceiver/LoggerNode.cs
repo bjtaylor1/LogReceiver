@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Windows.Data;
@@ -27,8 +28,7 @@ namespace LogReceiver
             {
                 if (isSelected != value)
                 {
-                    SetSelected(value);
-                    var descendants = GetDescendants();
+                    var descendants = GetDescendantsAndSelf();
                     foreach (var descendant in descendants)
                     {
                         descendant.SetSelected(value);
@@ -52,11 +52,11 @@ namespace LogReceiver
             BeginInvokePropertyChanged(nameof(IsSelected));
         }
 
-        private List<LoggerNode> GetDescendants()
+        private List<LoggerNode> GetDescendantsAndSelf()
         {
-            var descendants = new List<LoggerNode>();
+            var descendants = new List<LoggerNode> { this };
             descendants.AddRange(childLoggersList);
-            descendants.AddRange(childLoggersList.SelectMany(c => c.GetDescendants()));
+            descendants.AddRange(childLoggersList.SelectMany(c => c.GetDescendantsAndSelf()));
             return descendants;
         }
 
@@ -81,7 +81,8 @@ namespace LogReceiver
         public LoggerNode()
         {
             childLoggersList = new List<LoggerNode>();
-            ChildLoggers = new ListCollectionView(childLoggersList) { IsLiveSorting = true };
+            ChildLoggers = new ListCollectionView(childLoggersList);
+            ChildLoggers.SortDescriptions.Add(new SortDescription("Name", ListSortDirection.Ascending));
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -92,21 +93,23 @@ namespace LogReceiver
             var firstPart = parts.First();
             if (!childrenDictionary.TryGetValue(firstPart, out child))
             {
-                child = new LoggerNode { Name = firstPart, IsSelected = true, IsExpanded = true };
+                child = new LoggerNode
+                {
+                    Name = firstPart,
+                    IsSelected = true,
+                    IsExpanded = true,
+                    FullLoggerName = fullLoggerName
+                };
+                loggersAdded.Add(fullLoggerName);
                 childLoggersList.Add(child);
                 childrenDictionary.Add(firstPart, child);
+                ChildLoggers.Refresh();
             }
             var remaining = parts.Skip(1);
             if (remaining.Any())
             {
                 child.AddChild(remaining, fullLoggerName, loggersAdded);
             }
-            else
-            {
-                child.FullLoggerName = fullLoggerName;
-                loggersAdded.Add(fullLoggerName);
-            }
-            ChildLoggers.Refresh();
         }
 
         protected void BeginInvokePropertyChanged(string propertyName)

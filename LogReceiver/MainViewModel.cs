@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Windows.Data;
 using Prism.Events;
 
@@ -35,11 +34,9 @@ namespace LogReceiver
 
         private bool FilterEvents(object obj)
         {
-            //return true;
-            var include = obj is MessageData messageData &&
-                loggersTurnedOn.Contains(messageData.Logger);
+            var messageData = (MessageData)obj;
+            var include = loggersTurnedOn.Contains(messageData.Logger);
             return include;
-                
         }
 
         private void HandleToggleLoggersEvent(LoggerToggleEventPayload payload)
@@ -70,6 +67,12 @@ namespace LogReceiver
         {
             eventList.Add(msg);
             AddLoggerRoot(msg.Logger);
+
+            if (eventList.Count > 5000)
+            {
+                eventList.RemoveRange(0, 2000);
+            }
+
             Events.Refresh();
         }
     }
