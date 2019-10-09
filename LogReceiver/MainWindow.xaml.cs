@@ -59,7 +59,7 @@ namespace LogReceiver
             dataGrid.ScrollIntoView(dataGrid.Items[dataGrid.Items.Count - 1]);
         }
 
-        private void DataGridRow_RequestBringIntoView(object sender, RequestBringIntoViewEventArgs e)
+        private void HandleRequestBringIntoView(object sender, RequestBringIntoViewEventArgs e)
         {
             e.Handled = true;
         }
