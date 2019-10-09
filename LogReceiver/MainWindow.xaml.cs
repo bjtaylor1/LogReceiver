@@ -1,5 +1,7 @@
 ﻿using Prism.Events;
+using System;
 using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -13,14 +15,21 @@ namespace LogReceiver
     public partial class MainWindow : Window
     {
         private ScrollViewer dataGridScrollViewer;
+        private readonly MainViewModel mainViewModel;
 
         public MainWindow()
         {
             InitializeComponent();
-            MainViewModel mainViewModel = new MainViewModel();
+            mainViewModel = new MainViewModel();
             DataContext = mainViewModel;
             Task.Run(() => LogListener.Listen());
             dataGrid.Loaded += HandleDataGridLoaded;
+            Closing += HandleClosing;
+        }
+
+        private void HandleClosing(object sender, CancelEventArgs e)
+        {
+            mainViewModel.Save();
         }
 
         private void HandleDataGridLoaded(object sender, RoutedEventArgs e)
@@ -52,11 +61,6 @@ namespace LogReceiver
                 }
             }
             return sv;
-        }
-
-        private void ItemAdded()
-        {
-            dataGrid.ScrollIntoView(dataGrid.Items[dataGrid.Items.Count - 1]);
         }
 
         private void HandleRequestBringIntoView(object sender, RequestBringIntoViewEventArgs e)

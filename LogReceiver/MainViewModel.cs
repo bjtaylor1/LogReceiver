@@ -1,5 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.Linq;
+using System.Windows;
 using System.Windows.Data;
+using Newtonsoft.Json;
 using Prism.Events;
 
 namespace LogReceiver
@@ -30,6 +36,47 @@ namespace LogReceiver
             App.EventAggregator.Value.GetEvent<LoggerToggleEvent>().Subscribe(HandleToggleLoggersEvent, ThreadOption.UIThread);
             eventList = new List<MessageData>();
             Events = new ListCollectionView(eventList) { Filter = FilterEvents };
+            Load();
+        }
+
+        internal void Save()
+        {
+            var loggerModels = Mapping.Mapper.Value.Map<List<LoggerNode>, List<LoggerNodeModel>>(ChildLoggersList);
+            var loggers = JsonConvert.SerializeObject(loggerModels, Formatting.Indented);
+            Settings.Default.AllLoggers = loggers;
+            Settings.Default.IncludedLoggers = new StringCollection();
+            Settings.Default.IncludedLoggers.AddRange(loggersTurnedOn.ToArray());
+            Settings.Default.Save();
+        }
+
+        internal void Load()
+        {
+            try
+            {
+                var allLoggersJson = Settings.Default.AllLoggers;
+                if (!string.IsNullOrEmpty(allLoggersJson))
+                {
+                    var allLoggerModels = JsonConvert.DeserializeObject<LoggerNodeModel[]>(allLoggersJson);
+                    var allLoggers = Mapping.Mapper.Value.Map<LoggerNodeModel[], List<LoggerNode>>(allLoggerModels);
+                    ChildLoggersList = allLoggers;
+                    foreach (var logger in GetDescendantsAndSelf())
+                    {
+                        logger.ChildLoggers.Refresh();
+                    }
+                }
+                if (Settings.Default.IncludedLoggers != null)
+                {
+                    foreach (var loggerTurnedOn in Settings.Default.IncludedLoggers)
+                    {
+                        loggersTurnedOn.Add(loggerTurnedOn);
+                    }
+                    Events.Refresh();
+                }
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show("Failed to load existing data: " + e.Message);
+            }
         }
 
         private bool FilterEvents(object obj)

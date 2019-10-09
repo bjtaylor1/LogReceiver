@@ -18,4 +18,5 @@ namespace LogReceiverTests
             Assert.AreEqual("======= Application|Starting =======", @event.Message);
         }
     }
+
 }

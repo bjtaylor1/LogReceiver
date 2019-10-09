@@ -1,13 +1,9 @@
-﻿using Prism.Events;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Configuration;
 using System.Diagnostics;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace LogReceiver
@@ -23,7 +19,7 @@ namespace LogReceiver
             using (var udpClient = new UdpClient(port))
             {
                 var endPoint = new IPEndPoint(IPAddress.Any, port);
-                while (Interlocked.Read(ref Running) == 0)
+                while (true)
                 {
                     try
                     {

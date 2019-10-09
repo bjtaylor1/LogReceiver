@@ -1,22 +1,26 @@
-﻿using System;
-using System.Collections;
+﻿using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Windows.Data;
 
 namespace LogReceiver
+
 {
+
     public class LoggerNode : INotifyPropertyChanged
     {
         private bool isSelected, isExpanded;
         private string fullLoggerName;
 
+        private readonly List<LoggerNode> childLoggersList = new List<LoggerNode>();
+
         public string Name { get; set; }
 
         public string FullLoggerName
         {
-            get => fullLoggerName; set
+            get => fullLoggerName;
+            set
             {
                 fullLoggerName = value;
                 BeginInvokePropertyChanged(nameof(FullLoggerName));
@@ -25,7 +29,8 @@ namespace LogReceiver
 
         public bool IsSelected
         {
-            get => isSelected; set
+            get => isSelected;
+            set
             {
                 if (isSelected != value)
                 {
@@ -53,11 +58,11 @@ namespace LogReceiver
             BeginInvokePropertyChanged(nameof(IsSelected));
         }
 
-        private List<LoggerNode> GetDescendantsAndSelf()
+        protected List<LoggerNode> GetDescendantsAndSelf()
         {
             var descendants = new List<LoggerNode> { this };
-            descendants.AddRange(childLoggersList);
-            descendants.AddRange(childLoggersList.SelectMany(c => c.GetDescendantsAndSelf()));
+            descendants.AddRange(ChildLoggersList);
+            descendants.AddRange(ChildLoggersList.SelectMany(c => c.GetDescendantsAndSelf()));
             return descendants;
         }
 
@@ -74,14 +79,26 @@ namespace LogReceiver
             }
         }
 
-        //need to be kept in sync
-        private readonly List<LoggerNode> childLoggersList;
+        public List<LoggerNode> ChildLoggersList
+        {
+            get => childLoggersList;
+            set
+            {
+                childLoggersList.AddRange(value);
+                foreach(var item in value)
+                {
+                    childrenDictionary.Add(item.Name, item);
+                }
+                ChildLoggers.Refresh();
+            }
+        }
+
         public ListCollectionView ChildLoggers { get; }
+
         private readonly Dictionary<string, LoggerNode> childrenDictionary = new Dictionary<string, LoggerNode>();
 
         public LoggerNode()
         {
-            childLoggersList = new List<LoggerNode>();
             ChildLoggers = new ListCollectionView(childLoggersList);
             ChildLoggers.SortDescriptions.Add(new SortDescription("Name", ListSortDirection.Ascending));
         }
@@ -98,11 +115,14 @@ namespace LogReceiver
                 {
                     Name = firstPart,
                     IsSelected = true,
-                    IsExpanded = true,
-                    FullLoggerName = fullLoggerName
+                    IsExpanded = true
                 };
+                if(parts.Count() == 1)
+                {
+                    child.FullLoggerName = fullLoggerName;
+                }
                 loggersAdded.Add(fullLoggerName);
-                childLoggersList.Add(child);
+                ChildLoggersList.Add(child);
                 childrenDictionary.Add(firstPart, child);
                 ChildLoggers.Refresh();
             }
