@@ -14,7 +14,6 @@ namespace LogReceiver
             InitializeComponent();
             var eventAggregator = new EventAggregator();
             MainViewModel mainViewModel = new MainViewModel(eventAggregator);
-            mainViewModel.AddLoggerRoot("Parent.Child.Grandchild");
             DataContext = mainViewModel;
             Task.Run(() => LogListener.Listen(eventAggregator));
         }

@@ -7,7 +7,7 @@ namespace LogReceiver
 {
     public class LoggerNode : INotifyPropertyChanged
     {
-        private bool isSelected;
+        private bool isSelected, isExpanded;
         private string fullLoggerName;
 
         public string Name { get; set; }
@@ -25,11 +25,27 @@ namespace LogReceiver
         {
             get => isSelected; set
             {
-                isSelected = value;
-                PropertyChanged?.BeginInvoke(this, new PropertyChangedEventArgs(nameof(IsSelected)), null, null);
-                foreach (var child in categories)
+                if (isSelected != value)
                 {
-                    child.IsSelected = value;
+                    isSelected = value;
+                    PropertyChanged?.BeginInvoke(this, new PropertyChangedEventArgs(nameof(IsSelected)), null, null);
+                    foreach (var child in categories)
+                    {
+                        child.IsSelected = value;
+                    }
+                }
+            }
+        }
+
+        public bool IsExpanded
+        {
+            get => isExpanded;
+            set
+            {
+                if (isExpanded != value)
+                {
+                    isExpanded = value;
+                    PropertyChanged?.BeginInvoke(this, new PropertyChangedEventArgs(nameof(IsExpanded)), null, null);
                 }
             }
         }
@@ -53,7 +69,7 @@ namespace LogReceiver
             var firstPart = parts.First();
             if (!childrenDictionary.TryGetValue(firstPart, out child))
             {
-                child = new LoggerNode { Name = firstPart, IsSelected = true };
+                child = new LoggerNode { Name = firstPart, IsSelected = true, IsExpanded = true };
                 categories.Add(child);
                 childrenDictionary.Add(firstPart, child);
             }
