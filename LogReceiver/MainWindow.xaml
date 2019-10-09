@@ -61,7 +61,8 @@
             <GridSplitter Grid.Row="1" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" ResizeBehavior="PreviousAndNext" ResizeDirection="Rows"/>
 
             <TextBox IsReadOnly="True" Grid.Row="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
-                     Text="{Binding SelectedMessage.Message}"/>
+                     Text="{Binding SelectedMessage.Message}"
+                     VerticalScrollBarVisibility="Auto"/>
         </Grid>
 
         <GridSplitter Grid.Column="1" ResizeDirection="Columns" HorizontalAlignment="Stretch" ResizeBehavior="PreviousAndNext"/>
