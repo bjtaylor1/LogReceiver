@@ -1,11 +1,12 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
 using System.Windows;
 using System.Windows.Data;
+using System.Windows.Input;
 using Newtonsoft.Json;
+using Prism.Commands;
 using Prism.Events;
 
 namespace LogReceiver
@@ -15,6 +16,7 @@ namespace LogReceiver
         private readonly List<MessageData> eventList;
         private readonly HashSet<string> loggersTurnedOn = new HashSet<string>();
         private MessageData selectedMessage;
+        public ICommand ClearCommand { get; }
 
         public ListCollectionView Events { get; }
 
@@ -36,7 +38,14 @@ namespace LogReceiver
             App.EventAggregator.Value.GetEvent<LoggerToggleEvent>().Subscribe(HandleToggleLoggersEvent, ThreadOption.UIThread);
             eventList = new List<MessageData>();
             Events = new ListCollectionView(eventList) { Filter = FilterEvents };
+            ClearCommand = new DelegateCommand(Clear);
             Load();
+        }
+
+        private void Clear()
+        {
+            eventList.Clear();
+            Events.Refresh();
         }
 
         internal void Save()

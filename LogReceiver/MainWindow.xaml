@@ -19,10 +19,13 @@
                 <RowDefinition Height="8"/>
                 <RowDefinition Height="4*"/>
             </Grid.RowDefinitions>
-            
+
             <DataGrid ItemsSource="{Binding Events}" AutoGenerateColumns="False" x:Name="dataGrid"
                       HorizontalAlignment="Stretch"
-                      GridLinesVisibility="None" CanUserAddRows="False" CanUserDeleteRows="False"
+                      GridLinesVisibility="None"
+                      CanUserAddRows="False"
+                      CanUserDeleteRows="False"
+                      IsReadOnly="True"
                       SelectedItem="{Binding SelectedMessage}"
                       >
                 <DataGrid.RowStyle>
@@ -57,6 +60,20 @@
                     </DataGridTextColumn>
                 </DataGrid.Columns>
             </DataGrid>
+
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="30"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="30"/>
+                </Grid.ColumnDefinitions>
+                <Button Grid.Column="1" Grid.Row="1" Content="Clear" Command="{Binding ClearCommand}"/>
+            </Grid>
 
             <GridSplitter Grid.Row="1" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" ResizeBehavior="PreviousAndNext" ResizeDirection="Rows"/>
 
