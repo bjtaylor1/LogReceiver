@@ -14,7 +14,7 @@ namespace LogReceiver
     public class MainViewModel : LoggerNode
     {
         private readonly List<MessageData> eventList;
-        private readonly HashSet<string> loggersTurnedOn = new HashSet<string>();
+        private readonly Dictionary<string, bool> loggersTurnedOn = new Dictionary<string, bool>();
         private MessageData selectedMessage;
         public ICommand ClearCommand { get; }
 
@@ -37,7 +37,7 @@ namespace LogReceiver
             App.EventAggregator.Value.GetEvent<MessageEvent>().Subscribe(AddMessage, ThreadOption.UIThread);
             App.EventAggregator.Value.GetEvent<LoggerToggleEvent>().Subscribe(HandleToggleLoggersEvent, ThreadOption.UIThread);
             eventList = new List<MessageData>();
-            Events = new ListCollectionView(eventList) { Filter = FilterEvents };
+            Events = new ListCollectionView(eventList);// { Filter = FilterEvents };
             ClearCommand = new DelegateCommand(Clear);
             Load();
         }
@@ -51,10 +51,8 @@ namespace LogReceiver
         internal void Save()
         {
             var loggerModels = Mapping.Mapper.Value.Map<List<LoggerNode>, List<LoggerNodeModel>>(ChildLoggersList);
-            var loggers = JsonConvert.SerializeObject(loggerModels, Formatting.Indented);
-            Settings.Default.AllLoggers = loggers;
-            Settings.Default.IncludedLoggers = new StringCollection();
-            Settings.Default.IncludedLoggers.AddRange(loggersTurnedOn.ToArray());
+            Settings.Default.AllLoggers = JsonConvert.SerializeObject(loggerModels, Formatting.Indented);
+            Settings.Default.IncludedLoggersKvps = JsonConvert.SerializeObject(loggersTurnedOn.ToArray());
             Settings.Default.Save();
         }
 
@@ -73,14 +71,16 @@ namespace LogReceiver
                         logger.ChildLoggers.Refresh();
                     }
                 }
-                if (Settings.Default.IncludedLoggers != null)
+                if (Settings.Default.IncludedLoggersKvps != null)
                 {
-                    foreach (var loggerTurnedOn in Settings.Default.IncludedLoggers)
+                    var loggersTurnedOnPersisted = JsonConvert.DeserializeObject<KeyValuePair<string, bool>[]>(Settings.Default.IncludedLoggersKvps);
+                    foreach (var loggerTurnedOn in loggersTurnedOnPersisted)
                     {
-                        loggersTurnedOn.Add(loggerTurnedOn);
+                        loggersTurnedOn[loggerTurnedOn.Key] = loggerTurnedOn.Value;
                     }
-                    Events.Refresh();
+
                 }
+                Events.Refresh();
             }
             catch (Exception e)
             {
@@ -88,11 +88,21 @@ namespace LogReceiver
             }
         }
 
-        private bool FilterEvents(object obj)
+        //private bool FilterEvents(object obj)
+        //{
+        //    var messageData = (MessageData)obj;
+        //    if (loggersTurnedOn.TryGetValue(messageData.Logger, out bool setting))
+        //        return setting;
+        //    else
+        //        return true;
+        //}
+
+        private bool IncludeLogger(string logger)
         {
-            var messageData = (MessageData)obj;
-            var include = loggersTurnedOn.Contains(messageData.Logger);
-            return include;
+            if (loggersTurnedOn.TryGetValue(logger, out bool setting))
+                return setting;
+            else
+                return true;
         }
 
         private void HandleToggleLoggersEvent(LoggerToggleEventPayload payload)
@@ -105,10 +115,8 @@ namespace LogReceiver
         {
             foreach (var logger in loggers)
             {
-                if (state)
-                    loggersTurnedOn.Add(logger);
-                else
-                    loggersTurnedOn.Remove(logger);
+                loggersTurnedOn[logger] = state;
+                eventList.RemoveAll(md => md.Logger == logger);
             }
         }
 
@@ -121,15 +129,18 @@ namespace LogReceiver
 
         private void AddMessage(MessageData msg)
         {
-            eventList.Add(msg);
-            AddLoggerRoot(msg.Logger);
-
-            if (eventList.Count > 5000)
+            if (IncludeLogger(msg.Logger))
             {
-                eventList.RemoveRange(0, 2000);
-            }
+                eventList.Add(msg);
+                AddLoggerRoot(msg.Logger);
 
-            Events.Refresh();
+                if (eventList.Count > 5000)
+                {
+                    eventList.RemoveRange(0, 2000);
+                }
+
+                Events.Refresh();
+            }
         }
     }
 }
