@@ -39,8 +39,9 @@ namespace LogReceiver
                     {
                         descendant.SetSelected(value);
                     }
-                    var loggers = descendants.Select(d => d.FullLoggerName)
-                        .Where(f => !string.IsNullOrEmpty(f))
+                    var loggers = descendants.Where(l => l.ChildLoggersList.Count == 0)
+                        .Select (l => l.FullLoggerName)
+                        .Distinct()
                         .ToArray();
                     var loggerToggleEventPayload = new LoggerToggleEventPayload
                     {
@@ -117,10 +118,7 @@ namespace LogReceiver
                     IsSelected = true,
                     IsExpanded = true
                 };
-                if(parts.Count() == 1)
-                {
-                    child.FullLoggerName = fullLoggerName;
-                }
+                child.FullLoggerName = fullLoggerName;
                 loggersAdded.Add(fullLoggerName);
                 ChildLoggersList.Add(child);
                 childrenDictionary.Add(firstPart, child);

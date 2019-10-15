@@ -67,5 +67,13 @@ namespace LogReceiver
         {
             e.Handled = true;
         }
+
+        private void treeView_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+        {
+            if (e.NewValue is LoggerNode node)
+            {
+                mainViewModel.TreeViewSelect(node);
+            }
+        }
     }
 }

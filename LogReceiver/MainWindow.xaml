@@ -47,6 +47,9 @@
                             <DataTrigger Binding="{Binding Level}" Value="ERROR">
                                 <Setter Property="Foreground" Value="Red"/>
                             </DataTrigger>
+                            <DataTrigger Binding="{Binding IsHighlighted}" Value="true">
+                                <Setter Property="Background" Value="Aquamarine"/>
+                            </DataTrigger>
                         </Style.Triggers>
                     </Style>
                 </DataGrid.RowStyle>
@@ -88,7 +91,7 @@
 
         <GridSplitter Grid.Column="1" ResizeDirection="Columns" HorizontalAlignment="Stretch" ResizeBehavior="PreviousAndNext"/>
         <TreeView ItemsSource="{Binding ChildLoggers, IsAsync=True}" Grid.Column="2" BorderThickness="0"
-                  x:Name="treeView">
+                  x:Name="treeView" SelectedItemChanged="treeView_SelectedItemChanged">
             <TreeView.ItemContainerStyle>
                 <Style TargetType="TreeViewItem">
                     <EventSetter Event="RequestBringIntoView" Handler="HandleRequestBringIntoView"/>

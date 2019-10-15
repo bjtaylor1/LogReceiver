@@ -28,7 +28,21 @@ namespace LogReceiver
                 {
                     selectedMessage = value;
                     BeginInvokePropertyChanged(nameof(SelectedMessage));
+                    Highlight(selectedMessage?.Logger);
                 }
+            }
+        }
+
+        public void TreeViewSelect(LoggerNode node)
+        {
+            Highlight(node.FullLoggerName);
+        }
+
+        private void Highlight(string logger)
+        {
+            foreach(var @event in eventList)
+            {
+                @event.IsHighlighted = logger != null && (@event.Logger.Equals(logger) || @event.Logger.StartsWith($"{logger}."));
             }
         }
 
@@ -72,6 +86,7 @@ namespace LogReceiver
                     {
                         logger.ChildLoggers.Refresh();
                     }
+                    ChildLoggers.Refresh();
                 }
                 if (Settings.Default.IncludedLoggers != null)
                 {

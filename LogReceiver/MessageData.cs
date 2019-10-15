@@ -1,10 +1,13 @@
 ﻿using System;
+using System.ComponentModel;
 
 namespace LogReceiver
 
 {
-    public class MessageData
+    public class MessageData : INotifyPropertyChanged
     {
+        private bool isHighlighted;
+
         public DateTime TimeStamp { get; set; }
 
         public string Level { get; set; }
@@ -14,6 +17,25 @@ namespace LogReceiver
         public string Message { get; set; }
 
         public string SingleLineMessage { get; set; }
+        public bool IsHighlighted
+        {
+            get => isHighlighted;
+            set
+            {
+                if (isHighlighted != value)
+                {
+                    isHighlighted = value;
+                    NotifyPropertyChanged(nameof(IsHighlighted));
+                }
+            }
+        }
+
+        protected void NotifyPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.BeginInvoke(this, new PropertyChangedEventArgs(propertyName), null, null);
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
 
         public static MessageData Parse(string input)
         {
