@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Diagnostics;
 
 namespace LogReceiver
 
@@ -39,16 +40,29 @@ namespace LogReceiver
 
         public static MessageData Parse(string input)
         {
-            var parts = input.Split(new[] { '|' }, 4);
-            var @event = new MessageData
+            try
             {
-                TimeStamp = DateTime.Parse(parts[0]),
-                Level = parts[1],
-                Logger = parts[2],
-                Message = parts[3],
-                SingleLineMessage = parts[3].Replace("\n", "").Replace("\r", "")
-            };
-            return @event;
+                var parts = input.Split(new[] { '|' }, 4);
+                if (parts.Length == 4 && DateTime.TryParse(parts[0], out var timestamp))
+                {
+                    var @event = new MessageData
+                    {
+                        TimeStamp = DateTime.Parse(parts[0]),
+                        Level = parts[1],
+                        Logger = parts[2],
+                        Message = parts[3],
+                        SingleLineMessage = parts[3].Replace("\n", "").Replace("\r", "")
+                    };
+                    return @event;
+                }
+                else return null;
+
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Unparseable message starting {input.Substring(0, 255)}");
+                return null;
+            }            
         }
     }
 }

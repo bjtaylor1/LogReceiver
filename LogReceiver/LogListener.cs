@@ -18,16 +18,20 @@ namespace LogReceiver
             var messageEvent = App.EventAggregator.Value.GetEvent<MessageEvent>();
             using (var udpClient = new UdpClient(port))
             {
-                var endPoint = new IPEndPoint(IPAddress.Any, port);
                 while (true)
                 {
                     try
                     {
                         var result = await udpClient.ReceiveAsync();
                         var resultString = Encoding.UTF8.GetString(result.Buffer);
-                        Debug.WriteLine(resultString);
+
+                        if(!resultString.Contains("NHibernate"))
+                            Debug.WriteLine(resultString);
                         var messageData = MessageData.Parse(resultString);
-                        messageEvent.Publish(messageData);
+                        if (messageData != null)
+                        {
+                            messageEvent.Publish(messageData);
+                        }
                     }
                     catch (SocketException e)
                     {
