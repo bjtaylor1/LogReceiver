@@ -70,6 +70,7 @@
     </ApplicationDefinition>
     <Compile Include="MainMappingProfile.cs" />
     <Compile Include="LoggerNodeModel.cs" />
+    <Compile Include="RefreshListEvent.cs" />
     <Compile Include="Settings.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
@@ -84,7 +85,6 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="LoggerNode.cs" />
-    <Compile Include="LoggerToggleEvent.cs" />
     <Compile Include="LogListener.cs" />
     <Compile Include="MainViewModel.cs" />
     <Compile Include="MainWindow.xaml.cs">

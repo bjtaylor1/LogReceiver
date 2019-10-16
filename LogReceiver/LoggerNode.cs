@@ -44,16 +44,7 @@ namespace LogReceiver
                     {
                         descendant.SetSelected(value);
                     }
-                    var loggers = descendants.Where(l => l.ChildLoggersList.Count == 0)
-                        .Select(l => l.FullLoggerName)
-                        .Distinct()
-                        .ToArray();
-                    var loggerToggleEventPayload = new LoggerToggleEventPayload
-                    {
-                        Loggers = loggers,
-                        Selected = value
-                    };
-                    App.EventAggregator.Value.GetEvent<LoggerToggleEvent>().Publish(loggerToggleEventPayload);
+                    App.EventAggregator.Value.GetEvent<RefreshListEvent>().Publish();
                 }
             }
         }
@@ -83,6 +74,28 @@ namespace LogReceiver
             descendants.AddRange(ChildLoggersList);
             descendants.AddRange(ChildLoggersList.SelectMany(c => c.GetDescendantsAndSelf()));
             return descendants;
+        }
+
+        public bool IsTurnedOn(string[] parts, int index)
+        {
+            bool retval;
+            if (index >= parts.Length)
+                retval = true;
+            else
+            {
+                if(childrenDictionary.TryGetValue(parts[index], out var child))
+                {
+                    if (index == parts.Length - 1)
+                        retval = child.IsSelected; //we're at the tip of the tree
+                    else
+                        retval = child.IsTurnedOn(parts, index + 1); //there's more children to consider
+                }
+                else
+                {
+                    retval = true;// shouldn't happen, as the node should be in the tree
+                }
+            }
+            return retval;
         }
 
         public bool IsExpanded
@@ -124,7 +137,7 @@ namespace LogReceiver
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        public void AddChild(string[] parts, string fullLoggerName, HashSet<string> loggersAdded, int start)
+        public void AddChild(string[] parts, string fullLoggerName, Dictionary<string, bool> loggersAdded, int start)
         {
             LoggerNode child;
             var firstPart = parts[start];
@@ -137,7 +150,7 @@ namespace LogReceiver
                     IsSelected = this.IsSelected
                 };
                 child.FullLoggerName = string.Join(".", parts, 0, start + 1);
-                loggersAdded.Add(fullLoggerName);
+                loggersAdded[child.FullLoggerName] = child.IsSelected;
                 ChildLoggersList.Add(child);
                 childrenDictionary.Add(firstPart, child);
                 ChildLoggers.Refresh();

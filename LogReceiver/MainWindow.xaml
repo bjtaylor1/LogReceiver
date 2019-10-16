@@ -78,7 +78,10 @@
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="30"/>
                 </Grid.ColumnDefinitions>
-                <Button Grid.Column="1" Grid.Row="1" Content="Clear" Command="{Binding ClearCommand}"/>
+                <StackPanel Grid.Column="1" Grid.Row="1">
+                    <Button Content="Clear" Command="{Binding ClearCommand}"/>
+                </StackPanel>
+                
             </Grid>
 
             <GridSplitter Grid.Row="1" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" ResizeBehavior="PreviousAndNext" ResizeDirection="Rows"/>
