@@ -90,12 +90,18 @@
         </Grid>
 
         <GridSplitter Grid.Column="1" ResizeDirection="Columns" HorizontalAlignment="Stretch" ResizeBehavior="PreviousAndNext"/>
+        
         <TreeView ItemsSource="{Binding ChildLoggers, IsAsync=True}" Grid.Column="2" BorderThickness="0"
                   x:Name="treeView" SelectedItemChanged="treeView_SelectedItemChanged">
             <TreeView.ItemContainerStyle>
                 <Style TargetType="TreeViewItem">
                     <EventSetter Event="RequestBringIntoView" Handler="HandleRequestBringIntoView"/>
                     <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsHighlighted}" Value="true">
+                            <Setter Property="Background" Value="Aquamarine"/>
+                        </DataTrigger>
+                    </Style.Triggers>
                 </Style>
             </TreeView.ItemContainerStyle>
             <TreeView.ItemTemplate>
@@ -108,5 +114,19 @@
             </TreeView.ItemTemplate>
             
         </TreeView>
+        
+        <Grid Grid.Column="2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="30"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="30"/>
+            </Grid.ColumnDefinitions>
+            <Button Grid.Column="1" Grid.Row="1" Content="Clear" Command="{Binding ClearTreeCommand}"/>
+        </Grid>
     </Grid>
 </Window>

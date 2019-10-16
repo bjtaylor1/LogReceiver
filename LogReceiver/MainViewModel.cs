@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Linq;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
@@ -14,9 +12,10 @@ namespace LogReceiver
     public class MainViewModel : LoggerNode
     {
         private readonly List<MessageData> eventList;
-        private readonly HashSet<string> loggersTurnedOn = new HashSet<string>();
+        private Dictionary<string, bool> loggersTurnedOn = new Dictionary<string, bool>();
         private MessageData selectedMessage;
         public ICommand ClearCommand { get; }
+        public ICommand ClearTreeCommand { get; }
 
         public ListCollectionView Events { get; }
 
@@ -44,6 +43,11 @@ namespace LogReceiver
             {
                 @event.IsHighlighted = logger != null && (@event.Logger.Equals(logger) || @event.Logger.StartsWith($"{logger}."));
             }
+            foreach(var descendant in GetDescendantsAndSelf())
+            {
+                descendant.IsHighlighted = logger != null && descendant.FullLoggerName != null &&
+                    (descendant.FullLoggerName.Equals(logger) || logger.StartsWith($"{descendant.FullLoggerName}."));
+            }
         }
 
         public MainViewModel() : base()
@@ -53,6 +57,7 @@ namespace LogReceiver
             eventList = new List<MessageData>();
             Events = new ListCollectionView(eventList) { Filter = FilterEvents };
             ClearCommand = new DelegateCommand(Clear);
+            ClearTreeCommand = new DelegateCommand(ClearTree);
             Load();
         }
 
@@ -62,13 +67,20 @@ namespace LogReceiver
             Events.Refresh();
         }
 
+        private void ClearTree()
+        {
+            loggersTurnedOn.Clear();
+            ClearNodes();
+            ChildLoggers.Refresh();
+        }
+
         internal void Save()
         {
             var loggerModels = Mapping.Mapper.Value.Map<List<LoggerNode>, List<LoggerNodeModel>>(ChildLoggersList);
             var loggers = JsonConvert.SerializeObject(loggerModels, Formatting.Indented);
             Settings.Default.AllLoggers = loggers;
-            Settings.Default.IncludedLoggers = new StringCollection();
-            Settings.Default.IncludedLoggers.AddRange(loggersTurnedOn.ToArray());
+            string loggersTurnedOnJson = JsonConvert.SerializeObject(loggersTurnedOn);
+            Settings.Default.LoggerState = loggersTurnedOnJson;
             Settings.Default.Save();
         }
 
@@ -88,12 +100,10 @@ namespace LogReceiver
                     }
                     ChildLoggers.Refresh();
                 }
-                if (Settings.Default.IncludedLoggers != null)
+                if (Settings.Default.LoggerState != null)
                 {
-                    foreach (var loggerTurnedOn in Settings.Default.IncludedLoggers)
-                    {
-                        loggersTurnedOn.Add(loggerTurnedOn);
-                    }
+                    loggersTurnedOn = JsonConvert.DeserializeObject<Dictionary<string, bool>>(Settings.Default.LoggerState) ?? new Dictionary<string, bool>();
+                    // ok to reset this property, as it's not bound to
                     Events.Refresh();
                 }
             }
@@ -106,8 +116,9 @@ namespace LogReceiver
         private bool FilterEvents(object obj)
         {
             var messageData = (MessageData)obj;
-            var include = loggersTurnedOn.Contains(messageData.Logger);
-            return include;
+            if (loggersTurnedOn.TryGetValue(messageData.Logger, out var setting))
+                return setting;
+            return true;
         }
 
         private void HandleToggleLoggersEvent(LoggerToggleEventPayload payload)
@@ -120,17 +131,18 @@ namespace LogReceiver
         {
             foreach (var logger in loggers)
             {
-                if (state)
-                    loggersTurnedOn.Add(logger);
-                else
-                    loggersTurnedOn.Remove(logger);
+                if (logger != null)
+                {
+                    loggersTurnedOn[logger] = state;
+                }
             }
         }
 
         public void AddLoggerRoot(string fullLoggerName)
         {
             var loggersAdded = new HashSet<string>();
-            AddChild(fullLoggerName.Split(new[] { '.' }), fullLoggerName, loggersAdded);
+            string[] parts = fullLoggerName.Split(new[] { '.' });
+            AddChild(parts, fullLoggerName, loggersAdded, 0);
             ToggleLoggers(loggersAdded, true);
         }
 

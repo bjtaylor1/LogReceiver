@@ -12,7 +12,6 @@ namespace LogReceiver
     {
         private bool isSelected, isExpanded;
         private string fullLoggerName;
-
         private readonly List<LoggerNode> childLoggersList = new List<LoggerNode>();
 
         public string Name { get; set; }
@@ -25,6 +24,12 @@ namespace LogReceiver
                 fullLoggerName = value;
                 BeginInvokePropertyChanged(nameof(FullLoggerName));
             }
+        }
+
+        protected void ClearNodes()
+        {
+            childLoggersList.Clear();
+            childrenDictionary.Clear();
         }
 
         public bool IsSelected
@@ -40,7 +45,7 @@ namespace LogReceiver
                         descendant.SetSelected(value);
                     }
                     var loggers = descendants.Where(l => l.ChildLoggersList.Count == 0)
-                        .Select (l => l.FullLoggerName)
+                        .Select(l => l.FullLoggerName)
                         .Distinct()
                         .ToArray();
                     var loggerToggleEventPayload = new LoggerToggleEventPayload
@@ -49,6 +54,19 @@ namespace LogReceiver
                         Selected = value
                     };
                     App.EventAggregator.Value.GetEvent<LoggerToggleEvent>().Publish(loggerToggleEventPayload);
+                }
+            }
+        }
+
+        private bool isHighlighted;
+        public bool IsHighlighted
+        {
+            get => isHighlighted; set
+            {
+                if (isHighlighted != value)
+                {
+                    isHighlighted = value;
+                    this.BeginInvokePropertyChanged(nameof(IsHighlighted));
                 }
             }
         }
@@ -86,7 +104,7 @@ namespace LogReceiver
             set
             {
                 childLoggersList.AddRange(value);
-                foreach(var item in value)
+                foreach (var item in value)
                 {
                     childrenDictionary.Add(item.Name, item);
                 }
@@ -106,10 +124,10 @@ namespace LogReceiver
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        public void AddChild(IEnumerable<string> parts, string fullLoggerName, HashSet<string> loggersAdded)
+        public void AddChild(string[] parts, string fullLoggerName, HashSet<string> loggersAdded, int start)
         {
             LoggerNode child;
-            var firstPart = parts.First();
+            var firstPart = parts[start];
             if (!childrenDictionary.TryGetValue(firstPart, out child))
             {
                 child = new LoggerNode
@@ -118,16 +136,15 @@ namespace LogReceiver
                     IsSelected = true,
                     IsExpanded = true
                 };
-                child.FullLoggerName = fullLoggerName;
+                child.FullLoggerName = string.Join(".", parts, 0, start + 1);
                 loggersAdded.Add(fullLoggerName);
                 ChildLoggersList.Add(child);
                 childrenDictionary.Add(firstPart, child);
                 ChildLoggers.Refresh();
             }
-            var remaining = parts.Skip(1);
-            if (remaining.Any())
+            if (start + 1 < parts.Length)
             {
-                child.AddChild(remaining, fullLoggerName, loggersAdded);
+                child.AddChild(parts, fullLoggerName, loggersAdded, start + 1);
             }
         }
 

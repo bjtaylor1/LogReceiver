@@ -25,8 +25,6 @@ namespace LogReceiver
                         var result = await udpClient.ReceiveAsync();
                         var resultString = Encoding.UTF8.GetString(result.Buffer);
 
-                        if(!resultString.Contains("NHibernate"))
-                            Debug.WriteLine(resultString);
                         var messageData = MessageData.Parse(resultString);
                         if (messageData != null)
                         {
@@ -35,7 +33,7 @@ namespace LogReceiver
                     }
                     catch (SocketException e)
                     {
-                        Console.WriteLine(e);
+                        Debug.WriteLine(e);
                     }
                 }
             }
