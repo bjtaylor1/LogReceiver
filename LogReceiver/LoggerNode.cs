@@ -133,8 +133,8 @@ namespace LogReceiver
                 child = new LoggerNode
                 {
                     Name = firstPart,
-                    IsSelected = true,
-                    IsExpanded = true
+                    IsExpanded = true,
+                    IsSelected = this.IsSelected
                 };
                 child.FullLoggerName = string.Join(".", parts, 0, start + 1);
                 loggersAdded.Add(fullLoggerName);

@@ -52,6 +52,9 @@ namespace LogReceiver
 
         public MainViewModel() : base()
         {
+            IsSelected = true;
+            IsExpanded = true;
+
             App.EventAggregator.Value.GetEvent<MessageEvent>().Subscribe(AddMessage, ThreadOption.UIThread);
             App.EventAggregator.Value.GetEvent<LoggerToggleEvent>().Subscribe(HandleToggleLoggersEvent, ThreadOption.UIThread);
             eventList = new List<MessageData>();
@@ -156,6 +159,8 @@ namespace LogReceiver
                 eventList.RemoveRange(0, 2000);
             }
 
+            Events.Filter = null;
+            Events.Filter = FilterEvents;
             Events.Refresh();
         }
     }
