@@ -51,8 +51,12 @@ namespace LogReceiver
                         Level = parts[1],
                         Logger = parts[2],
                         Message = parts[3],
-                        SingleLineMessage = parts[3].Replace("\n", "").Replace("\r", "")
+                        SingleLineMessage = parts[3].Replace("\n", " ").Replace("\r", "")
                     };
+                    if(@event.SingleLineMessage.Length > 255)
+                    {
+                        @event.SingleLineMessage = @event.SingleLineMessage.Substring(0, 255);
+                    }
                     return @event;
                 }
                 else return null;
