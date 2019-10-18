@@ -157,9 +157,9 @@ namespace LogReceiver
                 eventList.Add(msg);
                 AddLoggerRoot(msg.Logger);
 
-                if (eventList.Count > 5000)
+                if (eventList.Count > 25000)
                 {
-                    eventList.RemoveRange(0, 2000);
+                    eventList.RemoveRange(0, 5000);
                 }
 
                 Events.Refresh();
