@@ -40,33 +40,24 @@ namespace LogReceiver
 
         public static MessageData Parse(string input)
         {
-            try
+            var parts = input.Split(new[] { '|' }, 4);
+            if (parts.Length == 4 && DateTime.TryParse(parts[0], out var timestamp))
             {
-                var parts = input.Split(new[] { '|' }, 4);
-                if (parts.Length == 4 && DateTime.TryParse(parts[0], out var timestamp))
+                var @event = new MessageData
                 {
-                    var @event = new MessageData
-                    {
-                        TimeStamp = DateTime.Parse(parts[0]),
-                        Level = parts[1],
-                        Logger = parts[2],
-                        Message = parts[3],
-                        SingleLineMessage = parts[3].Replace("\n", " ").Replace("\r", "")
-                    };
-                    if(@event.SingleLineMessage.Length > 255)
-                    {
-                        @event.SingleLineMessage = @event.SingleLineMessage.Substring(0, 255);
-                    }
-                    return @event;
+                    TimeStamp = DateTime.Parse(parts[0]),
+                    Level = parts[1],
+                    Logger = parts[2],
+                    Message = parts[3],
+                    SingleLineMessage = parts[3].Replace("\n", " ").Replace("\r", "")
+                };
+                if (@event.SingleLineMessage.Length > 255)
+                {
+                    @event.SingleLineMessage = @event.SingleLineMessage.Substring(0, 255);
                 }
-                else return null;
-
+                return @event;
             }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Unparseable message starting {input.Substring(0, 255)}");
-                return null;
-            }            
+            else return null;
         }
     }
 }

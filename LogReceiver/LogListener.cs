@@ -26,10 +26,7 @@ namespace LogReceiver
                         var resultString = Encoding.UTF8.GetString(result.Buffer);
 
                         var messageData = MessageData.Parse(resultString);
-                        if (messageData != null)
-                        {
-                            messageEvent.Publish(messageData);
-                        }
+                        messageEvent.Publish(messageData);
                     }
                     catch (SocketException e)
                     {
