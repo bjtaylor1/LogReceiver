@@ -13,8 +13,26 @@ namespace LogReceiver
     {
         private readonly List<MessageData> eventList;
         private MessageData selectedMessage;
+        private bool isPaused;
+
         public ICommand ClearCommand { get; }
         public ICommand ClearTreeCommand { get; }
+        public ICommand TogglePauseCommand { get; }
+
+        public bool IsPaused
+        {
+            get => isPaused; set
+            {
+                if (isPaused != value)
+                {
+                    isPaused = value;
+                    BeginInvokePropertyChanged(nameof(IsPaused));
+                    BeginInvokePropertyChanged(nameof(TogglePauseCommandContent));
+                }
+            }
+        }
+
+        public string TogglePauseCommandContent => IsPaused ? "Resume" : "Pause";
 
         public ListCollectionView Events { get; }
 
@@ -38,11 +56,11 @@ namespace LogReceiver
 
         private void Highlight(string logger)
         {
-            foreach(var @event in eventList)
+            foreach (var @event in eventList)
             {
                 @event.IsHighlighted = logger != null && (@event.Logger.Equals(logger) || @event.Logger.StartsWith($"{logger}."));
             }
-            foreach(var descendant in GetDescendantsAndSelf())
+            foreach (var descendant in GetDescendantsAndSelf())
             {
                 descendant.IsHighlighted = logger != null && descendant.FullLoggerName != null &&
                     (descendant.FullLoggerName.Equals(logger) || logger.StartsWith($"{descendant.FullLoggerName}."));
@@ -60,7 +78,13 @@ namespace LogReceiver
             Events = new ListCollectionView(eventList) { Filter = FilterEvents };
             ClearCommand = new DelegateCommand(Clear);
             ClearTreeCommand = new DelegateCommand(ClearTree);
+            TogglePauseCommand = new DelegateCommand(TogglePause);
             Load();
+        }
+
+        private void TogglePause()
+        {
+            IsPaused = !IsPaused;
         }
 
         private void RefreshList()
@@ -128,15 +152,18 @@ namespace LogReceiver
 
         private void AddMessage(MessageData msg)
         {
-            eventList.Add(msg);
-            AddLoggerRoot(msg.Logger);
-
-            if (eventList.Count > 5000)
+            if (!IsPaused)
             {
-                eventList.RemoveRange(0, 2000);
-            }
+                eventList.Add(msg);
+                AddLoggerRoot(msg.Logger);
 
-            Events.Refresh();
+                if (eventList.Count > 5000)
+                {
+                    eventList.RemoveRange(0, 2000);
+                }
+
+                Events.Refresh();
+            }
         }
     }
 }
