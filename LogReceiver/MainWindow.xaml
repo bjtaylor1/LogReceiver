@@ -6,6 +6,13 @@
         xmlns:local="clr-namespace:LogReceiver"
         mc:Ignorable="d"
         Title="Log receiver" Height="450" Width="800">
+    <Window.Resources>
+        <Style TargetType="Button" x:Key="ButtonPanelButtonStyle">
+            <Setter Property="Width" Value="100"/>
+            <Setter Property="Height" Value="25"/>
+            <Setter Property="Margin" Value="0 0 0 5"/>
+        </Style>
+    </Window.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="4*"/>
@@ -68,6 +75,9 @@
             </DataGrid>
 
             <Grid>
+                <Grid.Resources>
+                    <Style TargetType="Button"  BasedOn="{StaticResource ButtonPanelButtonStyle}"/>
+                </Grid.Resources>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="30"/>
                     <RowDefinition Height="Auto"/>
@@ -120,6 +130,10 @@
         </TreeView>
 
         <Grid Grid.Column="2">
+            <Grid.Resources>
+                <Style TargetType="Button"  BasedOn="{StaticResource ButtonPanelButtonStyle}"/>
+            </Grid.Resources>
+
             <Grid.RowDefinitions>
                 <RowDefinition Height="30"/>
                 <RowDefinition Height="21*"/>
