@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -79,7 +80,7 @@ namespace LogReceiver
             IsExpanded = true;
 
             App.EventAggregator.Value.GetEvent<MessageEvent>().Subscribe(AddMessage, ThreadOption.UIThread);
-            App.EventAggregator.Value.GetEvent<RefreshEvent>().Subscribe(Refresh, ThreadOption.UIThread);
+            App.EventAggregator.Value.GetEvent<InvalidateFilterCacheEvent>().Subscribe(InvalidateFilterCache, ThreadOption.UIThread);
             eventList = new List<MessageData>();
             Events = new ListCollectionView(eventList) { Filter = FilterEvents };
             ClearCommand = new DelegateCommand(Clear);
@@ -93,8 +94,12 @@ namespace LogReceiver
             IsPaused = !IsPaused;
         }
 
-        private void Refresh()
+        private void InvalidateFilterCache(InvalidateFilterCacheEventArgs args)
         {
+            foreach(var affectedLogger in args.AffectedLoggers)
+            {
+                filterCache.AddOrUpdate(affectedLogger, args.Value, (s, b) => args.Value);
+            }
             Events.Refresh();
             ChildLoggers.Refresh();
         }
@@ -142,12 +147,16 @@ namespace LogReceiver
             }
         }
 
+        private static readonly ConcurrentDictionary<string, bool> filterCache = new ConcurrentDictionary<string, bool>();
         public bool FilterEvents(object obj)
         {
             var messageData = (MessageData)obj;
-            var parts = messageData.Logger.Split('.');
-            var include = IsTurnedOn(parts, 0);
-            return include;
+            return filterCache.GetOrAdd(messageData.Logger, s =>
+            {
+                var parts = s.Split('.');
+                var include = IsTurnedOn(parts, 0);
+                return include;
+            });
         }
 
         public void AddLoggerRoot(string fullLoggerName)

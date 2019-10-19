@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Diagnostics;
@@ -23,8 +22,8 @@ namespace LogReceiver
             try
             {
                 Debug.WriteLine("Starting Listen");
-                var messageBuffer = App.EventAggregator.Value.GetEvent<MessageEvent>();
-                var messages = new List<MessageData>();
+                var messageEvent = App.EventAggregator.Value.GetEvent<MessageEvent>();
+                var messageBuffer = new List<MessageData>();
                 DateTime lastPublish = DateTime.MinValue;
                 while (true)
                 {
@@ -35,12 +34,14 @@ namespace LogReceiver
                         try
                         {
                             var messageData = MessageData.Parse(resultString);
-                            messages.Add(messageData);
+                            messageBuffer.Add(messageData);
                             var now = DateTime.Now;
                             if(now.Subtract(lastPublish) > TimeSpan.FromMilliseconds(1000))
                             {
-                                messageBuffer.Publish(messages.ToArray());
-                                messages.Clear();
+                                lastPublish = now;
+                                Debug.WriteLine($"Publishing {messageBuffer.Count} messages");
+                                messageEvent.Publish(messageBuffer.ToArray());
+                                messageBuffer.Clear();
                             }
                         }
                         catch (Exception e)

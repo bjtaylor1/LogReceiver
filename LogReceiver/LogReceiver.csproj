@@ -72,7 +72,7 @@
     </ApplicationDefinition>
     <Compile Include="MainMappingProfile.cs" />
     <Compile Include="LoggerNodeModel.cs" />
-    <Compile Include="RefreshListEvent.cs" />
+    <Compile Include="InvalidateFilterCacheEvent.cs" />
     <Compile Include="Settings.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>

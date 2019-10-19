@@ -44,7 +44,9 @@ namespace LogReceiver
                     {
                         descendant.SetSelected(value);
                     }
-                    App.EventAggregator.Value.GetEvent<RefreshEvent>().Publish();
+                    string[] affectedLoggers = descendants.Select(n => n.FullLoggerName).Distinct().Where(s => s != null).ToArray();
+                    var eventArgs = new InvalidateFilterCacheEventArgs { AffectedLoggers = affectedLoggers, Value = value };
+                    App.EventAggregator.Value.GetEvent<InvalidateFilterCacheEvent>().Publish(eventArgs);
                 }
             }
         }
