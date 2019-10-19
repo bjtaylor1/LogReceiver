@@ -45,7 +45,7 @@ namespace LogReceiver
             {
                 var @event = new MessageData
                 {
-                    TimeStamp = DateTime.Parse(parts[0]),
+                    TimeStamp = timestamp,
                     Level = parts[1],
                     Logger = parts[2],
                     Message = parts[3],

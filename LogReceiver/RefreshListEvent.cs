@@ -2,7 +2,7 @@
 
 namespace LogReceiver
 {
-    public class RefreshListEvent : PubSubEvent
+    public class RefreshEvent : PubSubEvent
     {
     }
 }

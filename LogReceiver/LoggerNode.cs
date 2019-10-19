@@ -44,7 +44,7 @@ namespace LogReceiver
                     {
                         descendant.SetSelected(value);
                     }
-                    App.EventAggregator.Value.GetEvent<RefreshListEvent>().Publish();
+                    App.EventAggregator.Value.GetEvent<RefreshEvent>().Publish();
                 }
             }
         }
@@ -153,7 +153,7 @@ namespace LogReceiver
                 loggersAdded[child.FullLoggerName] = child.IsSelected;
                 ChildLoggersList.Add(child);
                 childrenDictionary.Add(firstPart, child);
-                ChildLoggers.Refresh();
+                //ChildLoggers.Refresh();
             }
             if (start + 1 < parts.Length)
             {

@@ -1,5 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
@@ -56,7 +60,9 @@ namespace LogReceiver
 
         private void Highlight(string logger)
         {
-            foreach (var @event in eventList)
+            MessageData[] eventsToHighlight;
+            lock (eventList) eventsToHighlight = eventList.ToArray();
+            foreach (var @event in eventsToHighlight)
             {
                 @event.IsHighlighted = logger != null && (@event.Logger.Equals(logger) || @event.Logger.StartsWith($"{logger}."));
             }
@@ -73,7 +79,7 @@ namespace LogReceiver
             IsExpanded = true;
 
             App.EventAggregator.Value.GetEvent<MessageEvent>().Subscribe(AddMessage, ThreadOption.UIThread);
-            App.EventAggregator.Value.GetEvent<RefreshListEvent>().Subscribe(RefreshList, ThreadOption.UIThread);
+            App.EventAggregator.Value.GetEvent<RefreshEvent>().Subscribe(Refresh, ThreadOption.UIThread);
             eventList = new List<MessageData>();
             Events = new ListCollectionView(eventList) { Filter = FilterEvents };
             ClearCommand = new DelegateCommand(Clear);
@@ -87,9 +93,10 @@ namespace LogReceiver
             IsPaused = !IsPaused;
         }
 
-        private void RefreshList()
+        private void Refresh()
         {
             Events.Refresh();
+            ChildLoggers.Refresh();
         }
 
         private void Clear()
@@ -150,18 +157,20 @@ namespace LogReceiver
             AddChild(parts, fullLoggerName, loggersAdded, 0);
         }
 
-        private void AddMessage(MessageData msg)
+        public void AddMessage(MessageData[] msgs)
         {
             if (!IsPaused)
             {
-                eventList.Add(msg);
-                AddLoggerRoot(msg.Logger);
-
-                if (eventList.Count > 25000)
+                eventList.AddRange(msgs);
+                foreach (var logger in msgs.Select(m => m.Logger).Distinct().ToArray())
                 {
-                    eventList.RemoveRange(0, 5000);
+                    AddLoggerRoot(logger);
                 }
 
+                if (eventList.Count > 5000)
+                {
+                    eventList.RemoveRange(0, 2000);
+                }
                 Events.Refresh();
             }
         }
