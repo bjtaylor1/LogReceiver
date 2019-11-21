@@ -15,9 +15,7 @@
     </Window.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="4*"/>
-            <ColumnDefinition Width="8"/>
-            <ColumnDefinition Width="1*"/>
+            <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
         <Grid>
@@ -103,48 +101,5 @@
                      HorizontalScrollBarVisibility="Auto"/>
         </Grid>
 
-        <GridSplitter Grid.Column="1" ResizeDirection="Columns" HorizontalAlignment="Stretch" ResizeBehavior="PreviousAndNext"/>
-
-        <TreeView ItemsSource="{Binding ChildLoggers, IsAsync=True}" Grid.Column="2" BorderThickness="0"
-                  x:Name="treeView" SelectedItemChanged="treeView_SelectedItemChanged">
-            <TreeView.ItemContainerStyle>
-                <Style TargetType="TreeViewItem">
-                    <EventSetter Event="RequestBringIntoView" Handler="HandleRequestBringIntoView"/>
-                    <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
-                    <Style.Triggers>
-                        <DataTrigger Binding="{Binding IsHighlighted}" Value="true">
-                            <Setter Property="Background" Value="Aquamarine"/>
-                        </DataTrigger>
-                    </Style.Triggers>
-                </Style>
-            </TreeView.ItemContainerStyle>
-            <TreeView.ItemTemplate>
-                <HierarchicalDataTemplate ItemsSource="{Binding ChildLoggers, IsAsync=True}">
-                    <StackPanel Orientation="Horizontal">
-                        <CheckBox IsChecked="{Binding IsSelected, IsAsync=True}"/>
-                        <TextBlock Text="{Binding Name}"/>
-                    </StackPanel>
-                </HierarchicalDataTemplate>
-            </TreeView.ItemTemplate>
-
-        </TreeView>
-
-        <Grid Grid.Column="2">
-            <Grid.Resources>
-                <Style TargetType="Button"  BasedOn="{StaticResource ButtonPanelButtonStyle}"/>
-            </Grid.Resources>
-
-            <Grid.RowDefinitions>
-                <RowDefinition Height="30"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="370*"/>
-            </Grid.RowDefinitions>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="30"/>
-            </Grid.ColumnDefinitions>
-            <Button Grid.Column="1" Grid.Row="1" Content="Clear" Command="{Binding ClearTreeCommand}"/>
-        </Grid>
     </Grid>
 </Window>

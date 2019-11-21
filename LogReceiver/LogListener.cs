@@ -15,7 +15,6 @@ namespace LogReceiver
         public static long Running = 0;
         private static readonly int port = int.Parse(ConfigurationManager.AppSettings["port"]);
         private static readonly UdpClient udpClient = new UdpClient(port);
-        private static readonly MessageEvent messageEvent = App.EventAggregator.Value.GetEvent<MessageEvent>();
 
         internal static async Task Listen()
         {
@@ -36,7 +35,7 @@ namespace LogReceiver
                             var messageData = MessageData.Parse(resultString);
                             messageBuffer.Add(messageData);
                             var now = DateTime.Now;
-                            if(now.Subtract(lastPublish) > TimeSpan.FromMilliseconds(1000))
+                            if(now.Subtract(lastPublish) > TimeSpan.FromMilliseconds(100))
                             {
                                 lastPublish = now;
                                 Debug.WriteLine($"Publishing {messageBuffer.Count} messages");

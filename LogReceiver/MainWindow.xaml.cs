@@ -32,7 +32,6 @@ namespace LogReceiver
 
         private void HandleClosing(object sender, CancelEventArgs e)
         {
-            mainViewModel.Save();
             LogListener.Stop();
             if (!LogListener.StoppedEvent.Wait(TimeSpan.FromSeconds(2)))
             {
@@ -78,14 +77,6 @@ namespace LogReceiver
         private void HandleRequestBringIntoView(object sender, RequestBringIntoViewEventArgs e)
         {
             e.Handled = true;
-        }
-
-        private void treeView_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
-        {
-            if (e.NewValue is LoggerNode node)
-            {
-                mainViewModel.TreeViewSelect(node);
-            }
         }
     }
 }
