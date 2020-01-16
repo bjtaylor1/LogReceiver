@@ -36,6 +36,19 @@ namespace LogReceiver
             }
         }
 
+        public MessageData SelectedMessage
+        {
+            get { return selectedMessage; }
+            set
+            {
+                if(selectedMessage != value)
+                {
+                    selectedMessage = value;
+                    BeginInvokePropertyChanged(nameof(SelectedMessage));
+                }
+            }
+        }
+
         public string TogglePauseCommandContent => IsPaused ? "Resume" : "Pause";
 
         public ListCollectionView Events { get; }
@@ -76,11 +89,11 @@ namespace LogReceiver
         public event PropertyChangedEventHandler PropertyChanged;
 
 
-        public void AddMessage(MessageData[] msgs)
+        public void AddMessage(MessageData msgs)
         {
             if (!IsPaused)
             {
-                eventList.AddRange(msgs);
+                eventList.Add(msgs);
 
                 if (eventList.Count > 5000)
                 {

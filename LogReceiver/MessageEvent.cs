@@ -2,7 +2,7 @@
 
 namespace LogReceiver
 {
-    public class MessageEvent : PubSubEvent<MessageData[]>
+    public class MessageEvent : PubSubEvent<MessageData>
     {
 
     }

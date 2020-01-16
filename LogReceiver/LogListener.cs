@@ -22,7 +22,6 @@ namespace LogReceiver
             {
                 Debug.WriteLine("Starting Listen");
                 var messageEvent = App.EventAggregator.Value.GetEvent<MessageEvent>();
-                var messageBuffer = new List<MessageData>();
                 DateTime lastPublish = DateTime.MinValue;
                 while (true)
                 {
@@ -33,15 +32,7 @@ namespace LogReceiver
                         try
                         {
                             var messageData = MessageData.Parse(resultString);
-                            messageBuffer.Add(messageData);
-                            var now = DateTime.Now;
-                            if(now.Subtract(lastPublish) > TimeSpan.FromMilliseconds(100))
-                            {
-                                lastPublish = now;
-                                Debug.WriteLine($"Publishing {messageBuffer.Count} messages");
-                                messageEvent.Publish(messageBuffer.ToArray());
-                                messageBuffer.Clear();
-                            }
+                            messageEvent.Publish(messageData);
                         }
                         catch (Exception e)
                         {
