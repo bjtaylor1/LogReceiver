@@ -32,7 +32,22 @@ namespace LogReceiver
                         try
                         {
                             var messageData = MessageData.Parse(resultString);
-                            messageEvent.Publish(messageData);
+                            if (messageData != null && !string.IsNullOrEmpty(messageData.Logger))
+                            {
+                                messageEvent.Publish(messageData);
+                            }
+                            else
+                            {
+                                messageEvent.Publish(new MessageData
+                                {
+                                    Level = "Error",
+                                    Logger = "INVALID",
+                                    Message = resultString,
+                                    SingleLineMessage = "(garbled message received - investigate logger!)",
+                                    TimeStamp = DateTime.Now
+
+                                });
+                            }
                         }
                         catch (Exception e)
                         {
