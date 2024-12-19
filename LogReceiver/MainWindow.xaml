@@ -8,97 +8,130 @@
         Title="Log receiver" Height="450" Width="800">
     <Window.Resources>
         <Style TargetType="Button" x:Key="ButtonPanelButtonStyle">
-            <Setter Property="Width" Value="100"/>
-            <Setter Property="Height" Value="25"/>
-            <Setter Property="Margin" Value="0 0 0 5"/>
+            <Setter Property="Width" Value="100" />
+            <Setter Property="Height" Value="25" />
+            <Setter Property="Margin" Value="0 0 0 5" />
         </Style>
     </Window.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
         <Grid>
             <Grid.RowDefinitions>
-                <RowDefinition Height="6*"/>
-                <RowDefinition Height="8"/>
-                <RowDefinition Height="4*"/>
+                <RowDefinition Height="6*" />
+                <RowDefinition Height="8" />
+                <RowDefinition Height="4*" />
             </Grid.RowDefinitions>
 
-            <DataGrid ItemsSource="{Binding Events}" AutoGenerateColumns="False" x:Name="dataGrid"
-                      HorizontalAlignment="Stretch"
-                      GridLinesVisibility="None"
-                      CanUserAddRows="False"
-                      CanUserDeleteRows="False"
-                      IsReadOnly="True"
-                      SelectedItem="{Binding SelectedMessage}"
-                      >
-                <DataGrid.RowStyle>
-                    <Style TargetType="DataGridRow">
-                        <EventSetter Event="RequestBringIntoView" Handler="HandleRequestBringIntoView"/>
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding Level}" Value="TRACE">
-                                <Setter Property="Foreground" Value="LightGray"/>
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding Level}" Value="DEBUG">
-                                <Setter Property="Foreground" Value="LightGray"/>
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding Level}" Value="INFO">
-                                <Setter Property="Foreground" Value="Gray"/>
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding Level}" Value="WARN">
-                                <Setter Property="Foreground" Value="Orange"/>
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding Level}" Value="ERROR">
-                                <Setter Property="Foreground" Value="Red"/>
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding IsHighlighted}" Value="true">
-                                <Setter Property="Background" Value="Aquamarine"/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </DataGrid.RowStyle>
-
-                <DataGrid.Columns>
-                    <DataGridTextColumn Binding="{Binding TimeStamp}" Header="Time"/>
-                    <DataGridTextColumn Binding="{Binding Logger}" Header="Logger"/>
-                    <DataGridTextColumn Binding="{Binding SingleLineMessage}" Header="Message">
-                        <DataGridTextColumn.ElementStyle>
-                            <Style TargetType="TextBlock">
-                                <Setter Property="TextWrapping" Value="NoWrap"/>
-                            </Style>
-                        </DataGridTextColumn.ElementStyle>
-                    </DataGridTextColumn>
-                </DataGrid.Columns>
-            </DataGrid>
-
             <Grid>
-                <Grid.Resources>
-                    <Style TargetType="Button"  BasedOn="{StaticResource ButtonPanelButtonStyle}"/>
-                </Grid.Resources>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="30"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="30"/>
+                    <ColumnDefinition Width="*"></ColumnDefinition>
+                    <ColumnDefinition Width="8"></ColumnDefinition>
+                    <ColumnDefinition Width="250"></ColumnDefinition>
                 </Grid.ColumnDefinitions>
-                <StackPanel Grid.Column="1" Grid.Row="1">
-                    <Button Content="Clear" Command="{Binding ClearCommand}"/>
-                    <Button Content="{Binding TogglePauseCommandContent}" Command="{Binding TogglePauseCommand}"/>
-                </StackPanel>
+
+                <DataGrid ItemsSource="{Binding Events}" AutoGenerateColumns="False" x:Name="dataGrid"
+                          HorizontalAlignment="Stretch"
+                          GridLinesVisibility="None"
+                          CanUserAddRows="False"
+                          CanUserDeleteRows="False"
+                          IsReadOnly="True"
+                          SelectedItem="{Binding SelectedMessage}">
+                    <DataGrid.RowStyle>
+                        <Style TargetType="DataGridRow">
+                            <EventSetter Event="RequestBringIntoView" Handler="HandleRequestBringIntoView" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Level}" Value="TRACE">
+                                    <Setter Property="Foreground" Value="LightGray" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Level}" Value="DEBUG">
+                                    <Setter Property="Foreground" Value="LightGray" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Level}" Value="INFO">
+                                    <Setter Property="Foreground" Value="Gray" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Level}" Value="WARN">
+                                    <Setter Property="Foreground" Value="Orange" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Level}" Value="ERROR">
+                                    <Setter Property="Foreground" Value="Red" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding IsHighlighted}" Value="true">
+                                    <Setter Property="Background" Value="Aquamarine" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGrid.RowStyle>
+
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Binding="{Binding TimeStamp}" Header="Time" />
+                        <DataGridTextColumn Binding="{Binding Logger}" Header="Logger" />
+                        <DataGridTextColumn Binding="{Binding SingleLineMessage}" Header="Message">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="TextWrapping" Value="NoWrap" />
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+                
+                <GridSplitter Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" ResizeBehavior="PreviousAndNext" ResizeDirection="Columns"></GridSplitter>
+                <Grid Grid.Column="2" VerticalAlignment="Stretch">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"></RowDefinition>
+                        <RowDefinition Height="Auto"></RowDefinition>
+                        <RowDefinition></RowDefinition>
+                    </Grid.RowDefinitions>
+                    <StackPanel Orientation="Horizontal">
+                        <CheckBox IsChecked="{Binding DefaultLoggerOption}">New loggers start on</CheckBox>
+                        <Button Command="{Binding AllOnCommand}" Margin="10, 0, 0, 0">All on</Button>
+                        <Button Command="{Binding AllOffCommand}" Margin="10, 0, 0, 0">All off</Button>
+                    </StackPanel>
+                    <Separator Grid.Row="1"></Separator>
+                    
+                    <ListBox Grid.Row="2" ItemsSource="{Binding LoggerOptions}" VerticalAlignment="Stretch">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <CheckBox IsChecked="{Binding IsOn}" Content="{Binding Logger}"></CheckBox>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Grid>
+
+                <Grid>
+                    <Grid.Resources>
+                        <Style TargetType="Button" BasedOn="{StaticResource ButtonPanelButtonStyle}" />
+                    </Grid.Resources>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="30" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="30" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="1" Grid.Row="1">
+                        <Button Content="Clear" Command="{Binding ClearCommand}" />
+                        <Button Content="{Binding TogglePauseCommandContent}" Command="{Binding TogglePauseCommand}" />
+                    </StackPanel>
+
+                </Grid>
 
             </Grid>
 
-            <GridSplitter Grid.Row="1" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" ResizeBehavior="PreviousAndNext" ResizeDirection="Rows"/>
+
+            <GridSplitter Grid.Row="1" VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
+                          ResizeBehavior="PreviousAndNext" ResizeDirection="Rows" />
 
             <TextBox IsReadOnly="True" Grid.Row="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
                      Text="{Binding SelectedMessage.Message}"
                      VerticalScrollBarVisibility="Auto"
-                     HorizontalScrollBarVisibility="Auto"/>
+                     HorizontalScrollBarVisibility="Auto" />
         </Grid>
 
     </Grid>

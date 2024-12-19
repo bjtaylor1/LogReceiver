@@ -68,7 +68,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="LoggerNodeModel.cs" />
-    <Compile Include="InvalidateFilterCacheEvent.cs" />
+    <Compile Include="LoggerOption.cs" />
     <Compile Include="Settings.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
