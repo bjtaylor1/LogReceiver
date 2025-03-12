@@ -132,6 +132,7 @@ namespace LogReceiver
                 if (!loggerOptionsDictionary.TryGetValue(msg.Logger, out loggerOption))
                 {
                     loggerOption = new LoggerOption(msg.Logger) { IsOn = DefaultLoggerOption };
+                    loggerOption.PropertyChanged += HandleLoggerPropertyChanged;
                     loggerOptionsDictionary.Add(msg.Logger, loggerOption);
                     loggerOptionsList.Clear();
                     loggerOptionsList.AddRange(loggerOptionsDictionary.OrderBy(d => d.Key).Select(d => d.Value));
@@ -147,6 +148,15 @@ namespace LogReceiver
                 {
                     eventList.RemoveRange(0, 2000);
                 }
+                Events.Refresh();
+            }
+        }
+
+        private void HandleLoggerPropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(LoggerOption.IsOn) && sender is LoggerOption loggerOption && !loggerOption.IsOn)
+            {
+                eventList.RemoveAll(@event => @event.Logger == loggerOption.Logger);
                 Events.Refresh();
             }
         }
