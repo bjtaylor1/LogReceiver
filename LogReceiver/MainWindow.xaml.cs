@@ -78,5 +78,6 @@ namespace LogReceiver
         {
             e.Handled = true;
         }
+
     }
 }

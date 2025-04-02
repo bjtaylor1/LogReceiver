@@ -95,7 +95,10 @@
                     <ListBox Grid.Row="2" ItemsSource="{Binding LoggerOptions}" VerticalAlignment="Stretch">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
-                                <CheckBox IsChecked="{Binding IsOn}" Content="{Binding Logger}"></CheckBox>
+                                <StackPanel Orientation="Horizontal">
+                                    <CheckBox IsChecked="{Binding IsOn}" Content="{Binding Logger}"></CheckBox>
+                                    <Button Command="{Binding DataContext.GoToLoggerCommand, RelativeSource={RelativeSource FindAncestor, AncestorType=local:MainWindow}}" CommandParameter="{Binding Logger}" Margin="20,0,0,0" VerticalAlignment="Center">Go</Button>
+                                </StackPanel>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>
@@ -119,9 +122,7 @@
                         <Button Content="Clear" Command="{Binding ClearCommand}" />
                         <Button Content="{Binding TogglePauseCommandContent}" Command="{Binding TogglePauseCommand}" />
                     </StackPanel>
-
                 </Grid>
-
             </Grid>
 
 

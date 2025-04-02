@@ -87,7 +87,10 @@ namespace LogReceiver
             TogglePauseCommand = new DelegateCommand(TogglePause);
             AllOnCommand = new DelegateCommand(AllOn);
             AllOffCommand = new DelegateCommand(AllOff);
+            GoToLoggerCommand = new DelegateCommand<string>(GoToLogger);
         }
+
+        public DelegateCommand<string> GoToLoggerCommand { get; set; }
 
         public DelegateCommand AllOffCommand { get; set; }
 
@@ -106,6 +109,15 @@ namespace LogReceiver
             foreach (var logger in loggerOptionsDictionary)
             {
                 logger.Value.IsOn = false;
+            }
+        }
+
+        private void GoToLogger(string logger)
+        {
+            var lastEventOfLogger = eventList.LastOrDefault(e => e.Logger == logger);
+            if (lastEventOfLogger != null)
+            {
+                SelectedMessage = lastEventOfLogger;
             }
         }
 
