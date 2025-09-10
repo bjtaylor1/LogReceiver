@@ -8,6 +8,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 
 namespace LogReceiver
 {
@@ -86,20 +87,30 @@ namespace LogReceiver
 
         private static async Task ProcessClientMessages(NetworkStream stream, MessageEvent messageEvent)
         {
-            // Read complete messages from the connected client
-            // Messages are terminated with null byte (\0) to handle multi-line log entries
-            var buffer = new byte[1];
-            var messageBytes = new List<byte>();
+            // Use JsonMessageParser to handle JSON boundary detection
+            var jsonParser = new JsonMessageParser();
+            var buffer = new byte[4096];
             
             while (!cancellationTokenSource.Token.IsCancellationRequested)
             {
                 try
                 {
-                    int bytesRead = await stream.ReadAsync(buffer, 0, 1, cancellationTokenSource.Token);
+                    int bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length, cancellationTokenSource.Token);
                     if (bytesRead == 0)
                         break; // Client disconnected
                     
-                    ProcessReceivedByte(buffer[0], messageBytes, messageEvent);
+                    // Create array with only the bytes we actually read
+                    var actualData = new byte[bytesRead];
+                    Array.Copy(buffer, actualData, bytesRead);
+                    
+                    // Process received bytes and extract complete JSON messages
+                    var jsonMessages = jsonParser.ProcessBytes(actualData);
+                    
+                    // Process each complete message
+                    foreach (var messageData in jsonMessages)
+                    {
+                        ProcessCompleteMessage(messageData, messageEvent);
+                    }
                 }
                 catch (Exception e)
                 {
@@ -109,33 +120,16 @@ namespace LogReceiver
             }
         }
 
-        private static void ProcessReceivedByte(byte receivedByte, List<byte> messageBytes, MessageEvent messageEvent)
-        {
-            if (receivedByte == 0) // Found null byte delimiter (\0)
-            {
-                if (messageBytes.Count > 0)
-                {
-                    // Convert accumulated bytes to string and process
-                    string message = Encoding.UTF8.GetString(messageBytes.ToArray());
-                    ProcessCompleteMessage(message.Trim(), messageEvent);
-                    messageBytes.Clear();
-                }
-            }
-            else
-            {
-                messageBytes.Add(receivedByte);
-            }
-        }
 
-        private static void ProcessCompleteMessage(string message, MessageEvent messageEvent)
+
+        private static void ProcessCompleteMessage(MessageData messageData, MessageEvent messageEvent)
         {
-            if (string.IsNullOrWhiteSpace(message))
+            if (messageData == null)
                 return;
                 
             try
             {
-                var messageData = MessageData.Parse(message);
-                if (messageData != null && !string.IsNullOrEmpty(messageData.Logger))
+                if (!string.IsNullOrEmpty(messageData.Logger))
                 {
                     messageEvent.Publish(messageData);
                 }
@@ -145,8 +139,8 @@ namespace LogReceiver
                     {
                         Level = "ERROR",
                         Logger = "SYSTEM",
-                        Message = message,
-                        SingleLineMessage = "(garbled message received - investigate logger!)",
+                        Message = messageData.Message ?? "(no message)",
+                        SingleLineMessage = "(message with missing logger - investigate logger!)",
                         TimeStamp = DateTime.Now
                     });
                 }
@@ -158,7 +152,7 @@ namespace LogReceiver
                 {
                     Level = "ERROR",
                     Logger = "SYSTEM",
-                    Message = $"Exception processing message: {e.Message}\nOriginal message: {message}",
+                    Message = $"Exception processing message: {e.Message}",
                     SingleLineMessage = $"Exception processing message: {e.Message}",
                     TimeStamp = DateTime.Now
                 });

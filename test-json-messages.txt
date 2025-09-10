@@ -1,0 +1,2 @@
+{"time":"2025-09-10T15:52:00.0000000Z","level":"INFO","logger":"BT.Debug","message":"Single line message","exception":""}{"time":"2025-09-10T15:52:01.0000000Z","level":"ERROR","logger":"BT.Error","message":"Multi-line\nmessage with\nline breaks","exception":"System.Exception: Test exception"}
+{"time":"2025-09-10T15:52:02.0000000Z","level":"WARN","logger":"BT.Warn","message":"Message with \"quotes\" and {braces}","exception":""}
