@@ -11,22 +11,33 @@ namespace TestConsole
             
             var parser = new JsonMessageParser();
             
-            // Test 1: Single message
-            Console.WriteLine("\n=== Test 1: Single JSON message ===");
-            var input1 = @"{""level"": ""info"", ""message"": ""message 1""}";
-            var result1 = parser.ProcessString(input1);
-            Console.WriteLine($"Input: {input1}");
-            Console.WriteLine($"Messages found: {result1.Count}");
-            foreach (var msg in result1)
+            // Test 1: Hierarchical logger messages
+            Console.WriteLine("\n=== Test 1: Hierarchical logger messages ===");
+            var testMessages = new[]
             {
-                Console.WriteLine($"  Message: {msg}");
+                @"{""time"":""2025-09-10T15:52:00.0000000Z"",""level"":""DEBUG"",""logger"":""BT"",""message"":""BT root message"",""exception"":""""}",
+                @"{""time"":""2025-09-10T15:52:01.0000000Z"",""level"":""DEBUG"",""logger"":""BT.Debug"",""message"":""Debug subsystem message"",""exception"":""""}",
+                @"{""time"":""2025-09-10T15:52:02.0000000Z"",""level"":""INFO"",""logger"":""BT.Debug.CommandInfo"",""message"":""Command info message"",""exception"":""""}",
+                @"{""time"":""2025-09-10T15:52:03.0000000Z"",""level"":""DEBUG"",""logger"":""BT.Debug.CommandInfo.AddContentSecurityPolicyHeadersCommand"",""message"":""AddContentSecurityPolicyHeadersCommand executed"",""exception"":""""}",
+                @"{""time"":""2025-09-10T15:52:04.0000000Z"",""level"":""INFO"",""logger"":""BT.Debug.CommandInfo.GetBrandedContentCommand"",""message"":""GetBrandedContentCommand executed"",""exception"":""""}",
+                @"{""time"":""2025-09-10T15:52:05.0000000Z"",""level"":""ERROR"",""logger"":""BT.Error"",""message"":""Error in BT system"",""exception"":""System.Exception: Test exception""}"
+            };
+            
+            foreach (var testMessage in testMessages)
+            {
+                var result = parser.ProcessString(testMessage);
+                Console.WriteLine($"Input: {testMessage}");
+                Console.WriteLine($"Messages found: {result.Count}");
+                foreach (var msg in result)
+                {
+                    Console.WriteLine($"  Logger: {msg.Logger}, Message: {msg.Message}");
+                }
+                parser.ClearBuffer();
             }
             
-            parser.ClearBuffer();
-            
-            // Test 2: Two messages
-            Console.WriteLine("\n=== Test 2: Two JSON messages ===");
-            var input2 = @"{""level"": ""info"", ""message"": ""message 1""}{""level"": ""info"", ""message"": ""message 2""}";
+            // Test 2: All messages concatenated
+            Console.WriteLine("\n=== Test 2: All messages concatenated ===");
+            var input2 = string.Join("", testMessages);
             var result2 = parser.ProcessString(input2);
             Console.WriteLine($"Input: {input2}");
             Console.WriteLine($"Messages found: {result2.Count}");

@@ -1,2 +1,9 @@
-{"time":"2025-09-10T15:52:00.0000000Z","level":"INFO","logger":"BT.Debug","message":"Single line message","exception":""}{"time":"2025-09-10T15:52:01.0000000Z","level":"ERROR","logger":"BT.Error","message":"Multi-line\nmessage with\nline breaks","exception":"System.Exception: Test exception"}
-{"time":"2025-09-10T15:52:02.0000000Z","level":"WARN","logger":"BT.Warn","message":"Message with \"quotes\" and {braces}","exception":""}
+{"time":"2025-09-10T15:52:00.0000000Z","level":"DEBUG","logger":"BT","message":"BT root message","exception":""}
+{"time":"2025-09-10T15:52:01.0000000Z","level":"DEBUG","logger":"BT.Debug","message":"Debug subsystem message","exception":""}
+{"time":"2025-09-10T15:52:02.0000000Z","level":"INFO","logger":"BT.Debug.CommandInfo","message":"Command info message","exception":""}
+{"time":"2025-09-10T15:52:03.0000000Z","level":"DEBUG","logger":"BT.Debug.CommandInfo.AddContentSecurityPolicyHeadersCommand","message":"AddContentSecurityPolicyHeadersCommand executed","exception":""}
+{"time":"2025-09-10T15:52:04.0000000Z","level":"INFO","logger":"BT.Debug.CommandInfo.GetBrandedContentCommand","message":"GetBrandedContentCommand executed","exception":""}
+{"time":"2025-09-10T15:52:05.0000000Z","level":"ERROR","logger":"BT.Error","message":"Error in BT system","exception":"System.Exception: Test exception"}
+{"time":"2025-09-10T15:52:06.0000000Z","level":"WARN","logger":"BT.Services","message":"Service warning","exception":""}
+{"time":"2025-09-10T15:52:07.0000000Z","level":"INFO","logger":"BT.Services.UserService","message":"User service message","exception":""}
+{"time":"2025-09-10T15:52:08.0000000Z","level":"DEBUG","logger":"BT.Services.UserService.Authentication","message":"Authentication debug","exception":""}

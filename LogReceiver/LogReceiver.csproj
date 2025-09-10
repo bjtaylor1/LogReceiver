@@ -130,6 +130,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="FilteredLoggerTreeViewModel.cs" />
     <Compile Include="LoggerNodeModel.cs" />
     <Compile Include="LoggerOption.cs" />
     <Compile Include="LoggerTreeBuilder.cs" />

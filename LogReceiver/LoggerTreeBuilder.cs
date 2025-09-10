@@ -29,13 +29,14 @@ namespace LogReceiver
         /// Adds a logger to the tree, creating the necessary hierarchy
         /// </summary>
         /// <param name="loggerName">The full logger name (e.g., "BT.Debug.Log1")</param>
+        /// <returns>The logger node, or null if the logger already existed</returns>
         public LoggerNodeModel AddLogger(string loggerName)
         {
             if (string.IsNullOrEmpty(loggerName))
                 return null;
 
             if (_allNodes.TryGetValue(loggerName, out var existingNode))
-                return existingNode;
+                return null; // Return null if logger already exists
 
             var parts = loggerName.Split('.');
             var currentNode = _rootNode;
@@ -115,10 +116,16 @@ namespace LogReceiver
                     {
                         return true;
                     }
+                    else if (parentNode.CheckState == CheckState.Unchecked)
+                    {
+                        return false; // Explicitly disabled by parent
+                    }
                 }
             }
 
-            return false;
+            // If logger doesn't exist in tree yet, it should be enabled by default
+            // This handles the case where new loggers arrive before being added to the tree
+            return true;
         }
 
         /// <summary>

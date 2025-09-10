@@ -38,6 +38,10 @@ namespace LogReceiver
         public ListCollectionView LoggerOptions { get; }
         public LoggerNodeModel LoggerTreeRoot => loggerTreeBuilder.RootNode;
 
+        // Filtered tree view for performance
+        private FilteredLoggerTreeViewModel _filteredTreeViewModel;
+        public FilteredLoggerTreeViewModel FilteredTreeViewModel => _filteredTreeViewModel;
+
         protected void BeginInvokePropertyChanged(string propertyName)
         {
             PropertyChanged?.BeginInvoke(this, new PropertyChangedEventArgs(propertyName), null, null);
@@ -76,10 +80,25 @@ namespace LogReceiver
             {
                 if (searchText != value)
                 {
+                    var wasEmpty = string.IsNullOrEmpty(searchText);
+                    var isEmpty = string.IsNullOrEmpty(value);
+                    
                     searchText = value;
                     BeginInvokePropertyChanged(nameof(SearchText));
-                    Events.IsLiveFiltering = !string.IsNullOrEmpty(value);
-                    debouncedRefresh.Invoke();
+                    
+                    // Only enable live filtering when we have search text
+                    Events.IsLiveFiltering = !isEmpty;
+                    
+                    // If transitioning from empty to non-empty or vice versa, refresh immediately
+                    if (wasEmpty != isEmpty)
+                    {
+                        Events.Refresh();
+                    }
+                    else if (!isEmpty)
+                    {
+                        // Use debounced refresh for search text changes
+                        debouncedRefresh.Invoke();
+                    }
                 }
             }
         }
@@ -129,6 +148,22 @@ namespace LogReceiver
             LoggerOptions = new ListCollectionView(loggerOptionsList);
             loggerOptionsDictionary = new Dictionary<string, LoggerOption>();
             loggerTreeBuilder = new LoggerTreeBuilder();
+            _filteredTreeViewModel = new FilteredLoggerTreeViewModel(loggerTreeBuilder);
+            
+            // Subscribe to logger check state changes
+            LoggerNodeModel.CheckStateChanged += OnLoggerCheckStateChanged;
+            
+            // Set up filtering for Events
+            Events.Filter = FilterEvents;
+            Events.LiveFilteringProperties.Add(nameof(MessageData.Logger));
+            Events.LiveFilteringProperties.Add(nameof(MessageData.Message));
+            Events.LiveFilteringProperties.Add(nameof(MessageData.Level));
+            Events.IsLiveFiltering = false; // We'll enable this when needed
+            
+            // Set up filtering for LoggerOptions  
+            LoggerOptions.Filter = FilterLoggerOptions;
+            LoggerOptions.LiveFilteringProperties.Add(nameof(LoggerOption.Logger));
+            LoggerOptions.IsLiveFiltering = false; // We'll enable this when needed
             
             ClearCommand = new DelegateCommand(Clear);
             TogglePauseCommand = new DelegateCommand(TogglePause);
@@ -157,6 +192,7 @@ namespace LogReceiver
         private void ClearLoggerSearch()
         {
             LoggerSearchText = string.Empty;
+            _filteredTreeViewModel.FilterText = string.Empty;
             LoggerOptions.Refresh();
         }
         
@@ -224,8 +260,14 @@ namespace LogReceiver
         {
             if (!IsPaused)
             {
-                // Add to hierarchical tree
-                loggerTreeBuilder.AddLogger(msg.Logger);
+                // Add to hierarchical tree FIRST
+                var wasNewLogger = loggerTreeBuilder.AddLogger(msg.Logger);
+                
+                // Notify filtered tree view if new logger was added
+                if (wasNewLogger != null)
+                {
+                    _filteredTreeViewModel.OnLoggerAdded();
+                }
                 
                 // Maintain compatibility with old system
                 LoggerOption loggerOption;
@@ -245,6 +287,9 @@ namespace LogReceiver
                 {
                     eventList.RemoveRange(3000, 2000);
                 }
+                
+                // Always refresh since we have a filter applied
+                // The filter will handle the logic of what to show/hide
                 Events.Refresh();
             }
         }
@@ -257,8 +302,60 @@ namespace LogReceiver
             }
         }
 
+        /// <summary>
+        /// Filter predicate for Events collection - optimized for performance
+        /// </summary>
+        private bool FilterEvents(object item)
+        {
+            if (!(item is MessageData message))
+                return false;
+
+            // Check logger filtering first (most common filter)  
+            // Use the tree builder's IsLoggerEnabled method which handles hierarchical logic
+            if (!loggerTreeBuilder.IsLoggerEnabled(message.Logger))
+                return false;
+
+            // Check search text filter
+            if (!string.IsNullOrWhiteSpace(SearchText))
+            {
+                var searchLower = SearchText.ToLowerInvariant();
+                return message.Logger?.ToLowerInvariant().Contains(searchLower) == true ||
+                       message.Message?.ToLowerInvariant().Contains(searchLower) == true ||
+                       message.Level?.ToLowerInvariant().Contains(searchLower) == true;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Filter predicate for LoggerOptions collection
+        /// </summary>
+        private bool FilterLoggerOptions(object item)
+        {
+            if (!(item is LoggerOption loggerOption))
+                return false;
+
+            if (string.IsNullOrWhiteSpace(LoggerSearchText))
+                return true;
+
+            var searchLower = LoggerSearchText.ToLowerInvariant();
+            return loggerOption.Logger?.ToLowerInvariant().Contains(searchLower) == true;
+        }
+
+        /// <summary>
+        /// Handles logger check state changes to update filtering
+        /// </summary>
+        private void OnLoggerCheckStateChanged(LoggerNodeModel node)
+        {
+            _filteredTreeViewModel.OnLoggerStateChanged();
+            
+            // Refresh events when logger check states change
+            debouncedRefresh.Invoke();
+        }
+
         public void Dispose()
         {
+            LoggerNodeModel.CheckStateChanged -= OnLoggerCheckStateChanged;
             // TODO release managed resources here
         }
     }

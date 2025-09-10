@@ -20,6 +20,8 @@ namespace LogReceiver
         private bool _isExpanded = false;
         private readonly ObservableCollection<LoggerNodeModel> _children = new ObservableCollection<LoggerNodeModel>();
 
+        public static event Action<LoggerNodeModel> CheckStateChanged;
+
         public string Name { get; set; }
         public string FullLoggerName { get; set; }
         public LoggerNodeModel Parent { get; set; }
@@ -34,6 +36,9 @@ namespace LogReceiver
                     _checkState = value;
                     OnPropertyChanged();
                     OnPropertyChanged(nameof(IsChecked));
+                    
+                    // Notify about check state change for filtering
+                    CheckStateChanged?.Invoke(this);
                     
                     // Update children
                     if (value != CheckState.Indeterminate)
@@ -170,6 +175,7 @@ namespace LogReceiver
                 _checkState = newState;
                 OnPropertyChanged(nameof(CheckState));
                 OnPropertyChanged(nameof(IsChecked));
+                CheckStateChanged?.Invoke(this);
                 Parent?.UpdateCheckStateFromChildren();
             }
         }
