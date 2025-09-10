@@ -290,7 +290,7 @@ namespace LogReceiver
                 }
 
                 // Always add message to list - filtering happens in view
-                eventList.Add(msg);
+                eventList.Insert(0, msg);
 
                 if (eventList.Count > 5000)
                 {

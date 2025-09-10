@@ -58,7 +58,6 @@
                               SelectedItem="{Binding SelectedMessage}">
                     <DataGrid.RowStyle>
                         <Style TargetType="DataGridRow">
-                            <EventSetter Event="RequestBringIntoView" Handler="HandleRequestBringIntoView" />
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding Level}" Value="TRACE">
                                     <Setter Property="Foreground" Value="LightGray" />
