@@ -59,7 +59,6 @@
   <ItemGroup>
     <Compile Include="DeserializationTests.cs" />
     <Compile Include="JsonMessageParserTests.cs" />
-    <Compile Include="SimpleJsonParserTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
