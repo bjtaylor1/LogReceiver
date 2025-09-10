@@ -87,37 +87,6 @@ namespace LogReceiver
 
         private static async Task ProcessClientMessages(NetworkStream stream, MessageEvent messageEvent)
         {
-            // Use JsonMessageParser to handle JSON boundary detection
-            var jsonParser = new JsonMessageParser();
-            var buffer = new byte[4096];
-            
-            while (!cancellationTokenSource.Token.IsCancellationRequested)
-            {
-                try
-                {
-                    int bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length, cancellationTokenSource.Token);
-                    if (bytesRead == 0)
-                        break; // Client disconnected
-                    
-                    // Create array with only the bytes we actually read
-                    var actualData = new byte[bytesRead];
-                    Array.Copy(buffer, actualData, bytesRead);
-                    
-                    // Process received bytes and extract complete JSON messages
-                    var jsonMessages = jsonParser.ProcessBytes(actualData);
-                    
-                    // Process each complete message
-                    foreach (var messageData in jsonMessages)
-                    {
-                        ProcessCompleteMessage(messageData, messageEvent);
-                    }
-                }
-                catch (Exception e)
-                {
-                    Debug.WriteLine($"Error reading from TCP stream: {e}");
-                    break;
-                }
-            }
         }
 
 

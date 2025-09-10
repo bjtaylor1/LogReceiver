@@ -1,95 +1,41 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 using Newtonsoft.Json;
 
 namespace LogReceiver
 {
-    public class JsonMessageParser
+    public static class JsonMessageParser
     {
-        private readonly MemoryStream _buffer = new MemoryStream();
-
-        /// <summary>
-        /// Processes incoming bytes and extracts complete MessageData objects.
-        /// </summary>
-        /// <param name="data">The incoming data bytes</param>
-        /// <returns>A list of complete MessageData objects</returns>
-        public List<MessageData> ProcessBytes(byte[] data)
+        public static async Task Process<T>(Stream input, Action<T> messageReceived, CancellationToken cancellationToken)
         {
-            if (data == null || data.Length == 0)
-                return new List<MessageData>();
-
-            // Add new data to buffer
-            _buffer.Write(data, 0, data.Length);
+            using var textReader = new StreamReader(input);
+            using var reader = new JsonTextReader(textReader) { SupportMultipleContent = true };
             
-            return ExtractCompleteJsonMessages();
-        }
-
-        /// <summary>
-        /// Clears the internal buffer.
-        /// </summary>
-        public void ClearBuffer()
-        {
-            _buffer.SetLength(0);
-            _buffer.Position = 0;
-        }
-
-        private List<MessageData> ExtractCompleteJsonMessages()
-        {
-            var messages = new List<MessageData>();
             
-            if (_buffer.Length == 0)
-                return messages;
-
-            _buffer.Position = 0;
-            using (var streamReader = new StreamReader(_buffer, System.Text.Encoding.UTF8, false, 1024, true))
-            using (var jsonReader = new JsonTextReader(streamReader))
+            while (!cancellationToken.IsCancellationRequested)
             {
-                jsonReader.SupportMultipleContent = true;
-                var serializer = new JsonSerializer();
-                
                 try
                 {
-                    while (jsonReader.Read())
+                    if (!await reader.ReadAsync(cancellationToken))
                     {
-                        if (jsonReader.TokenType == JsonToken.StartObject)
-                        {
-                            var messageData = serializer.Deserialize<MessageData>(jsonReader);
-                            if (messageData != null)
-                            {
-                                messages.Add(messageData);
-                            }
-                        }
+                        break;
                     }
-                    
-                    // All content was successfully parsed
-                    ClearBuffer();
+                    var serializer = new JsonSerializer();
+                    var data = serializer.Deserialize<T>(reader);
+                    messageReceived(data);
                 }
-                catch (JsonReaderException)
+                catch (Exception e)
                 {
-                    // Hit incomplete JSON - keep remaining data for next time
-                    if (messages.Count > 0)
-                    {
-                        // We parsed some complete objects, need to keep the incomplete remainder
-                        var currentPosition = streamReader.BaseStream.Position;
-                        var remainingData = new byte[_buffer.Length - currentPosition];
-                        _buffer.Position = currentPosition;
-                        _buffer.Read(remainingData, 0, remainingData.Length);
-                        
-                        _buffer.SetLength(0);
-                        _buffer.Position = 0;
-                        _buffer.Write(remainingData, 0, remainingData.Length);
-                    }
-                    // If no messages were parsed, keep everything in buffer
+                    Debug.WriteLine($"Error reading from TCP stream: {e}");
+                    break;
                 }
             }
 
-            return messages;
-        }
-
-        public void Dispose()
-        {
-            _buffer?.Dispose();
         }
     }
+    
 }
