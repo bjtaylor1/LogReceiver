@@ -22,10 +22,8 @@ namespace LogReceiver
         private bool defaultLoggerOption = true;
 
         public ICommand ClearCommand { get; }
-        public ICommand ClearTreeCommand { get; }
         public ICommand TogglePauseCommand { get; }
-        public ICommand ApplyFilterCommand { get; }
-        public ICommand ClearFilterCommand { get; }
+
         public ICommand ClearSearchCommand { get; }
         public ICommand ClearLoggerSearchCommand { get; }
         
@@ -134,16 +132,12 @@ namespace LogReceiver
             
             ClearCommand = new DelegateCommand(Clear);
             TogglePauseCommand = new DelegateCommand(TogglePause);
-            ApplyFilterCommand = new DelegateCommand(ApplyFilter);
-            ClearFilterCommand = new DelegateCommand(ClearFilter);
             AllOnCommand = new DelegateCommand(AllOn);
             AllOffCommand = new DelegateCommand(AllOff);
             GoToLoggerCommand = new DelegateCommand<string>(GoToLogger);
             OnlyLoggerCommand = new DelegateCommand<string>(OnlyLogger);
             ClearSearchCommand = new DelegateCommand(ClearSearch);
             ClearLoggerSearchCommand = new DelegateCommand(ClearLoggerSearch);
-            Events.Filter = EventFilter;
-            LoggerOptions.Filter = LoggerFilter;
             
             debouncedRefresh = Debouncer.Debounce(() => Application.Current.Dispatcher.Invoke(() =>
             {
@@ -153,33 +147,6 @@ namespace LogReceiver
             {
                 LoggerOptions.Refresh();
             }), TimeSpan.FromSeconds(0.5));
-        }
-
-        private bool EventFilter(object obj)
-        {
-            var m = (MessageData)obj;
-            
-            // Text search filter
-            var passesTextFilter = string.IsNullOrEmpty(SearchText) || 
-                                   m.Message.IndexOf(SearchText, StringComparison.OrdinalIgnoreCase) >= 0;
-            
-            if (!passesTextFilter)
-                return false;
-            
-            // Logger filter - only apply if filter has been explicitly applied
-            if (filterApplied)
-            {
-                return loggerTreeBuilder.IsLoggerEnabled(m.Logger);
-            }
-            
-            // Fallback to old system if tree not being used
-            return !loggerOptionsDictionary.TryGetValue(m.Logger, out var loggerOption) || loggerOption.IsOn;
-        }
-
-        private bool LoggerFilter(object obj)
-        {
-            var m = (LoggerOption)obj;            
-            return string.IsNullOrEmpty(LoggerSearchText) || m.Logger.IndexOf(LoggerSearchText, StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         private void ClearSearch()
@@ -192,24 +159,7 @@ namespace LogReceiver
             LoggerSearchText = string.Empty;
             LoggerOptions.Refresh();
         }
-
-        private void ApplyFilter()
-        {
-            filterApplied = true;
-            Events.Refresh();
-        }
-
-        private void ClearFilter()
-        {
-            filterApplied = false;
-            // Reset all loggers to checked state
-            foreach (var node in loggerTreeBuilder.RootNode.Children)
-            {
-                node.CheckState = CheckState.Checked;
-            }
-            Events.Refresh();
-        }
-
+        
         public DelegateCommand<string> GoToLoggerCommand { get; set; }
         public DelegateCommand<string> OnlyLoggerCommand { get; set; }
 
@@ -289,12 +239,11 @@ namespace LogReceiver
                     LoggerOptions.Refresh();
                 }
 
-                // Always add message to list - filtering happens in view
                 eventList.Insert(0, msg);
 
                 if (eventList.Count > 5000)
                 {
-                    eventList.RemoveRange(0, 2000);
+                    eventList.RemoveRange(3000, 2000);
                 }
                 Events.Refresh();
             }

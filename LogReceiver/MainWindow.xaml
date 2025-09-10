@@ -6,13 +6,6 @@
         xmlns:local="clr-namespace:LogReceiver"
         mc:Ignorable="d"
         Title="Log receiver" Height="450" Width="800">
-    <Window.Resources>
-        <Style TargetType="Button" x:Key="ButtonPanelButtonStyle">
-            <Setter Property="Width" Value="100" />
-            <Setter Property="Height" Value="25" />
-            <Setter Property="Margin" Value="0 0 0 5" />
-        </Style>
-    </Window.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
@@ -46,7 +39,6 @@
                         </Grid.ColumnDefinitions>
                         <Label Content="Search:"/>
                         <TextBox Grid.Column="1" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"></TextBox>
-                        <Button Grid.Column="2" Command="{Binding ClearSearchCommand}">Clear</Button>
                     </Grid>
                     
                     <DataGrid Grid.Row="1" ItemsSource="{Binding Events}" AutoGenerateColumns="False" x:Name="dataGrid"
@@ -97,71 +89,11 @@
                 
                 <GridSplitter Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" ResizeBehavior="PreviousAndNext" ResizeDirection="Columns"></GridSplitter>
                 <Grid Grid.Column="2" VerticalAlignment="Stretch">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"></RowDefinition>
-                        <RowDefinition Height="Auto"></RowDefinition>
-                        <RowDefinition></RowDefinition>
-                    </Grid.RowDefinitions>
-                    <StackPanel Orientation="Horizontal">
-                        <CheckBox IsChecked="{Binding DefaultLoggerOption}">New loggers start on</CheckBox>
-                        <Button Command="{Binding AllOnCommand}" Margin="10, 0, 0, 0">All on</Button>
-                        <Button Command="{Binding AllOffCommand}" Margin="10, 0, 0, 0">All off</Button>
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
-                        <Button Command="{Binding ApplyFilterCommand}" Margin="0, 0, 5, 0">Apply Filter</Button>
-                        <Button Command="{Binding ClearFilterCommand}" Margin="5, 0, 0, 0">Clear Filter</Button>
-                    </StackPanel>
-                    <Separator Grid.Row="1"></Separator>
-                    
-                    <TabControl Grid.Row="2">
-                        <TabItem Header="Flat List">
-                            <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"></RowDefinition>
-                                    <RowDefinition Height="*"></RowDefinition>
-                                </Grid.RowDefinitions>
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"></ColumnDefinition>
-                                        <ColumnDefinition Width="*"></ColumnDefinition>
-                                        <ColumnDefinition Width="Auto"></ColumnDefinition>
-                                    </Grid.ColumnDefinitions>
-                                    <Label Content="Search:"/>
-                                    <TextBox Grid.Column="1" Text="{Binding LoggerSearchText, UpdateSourceTrigger=PropertyChanged}"></TextBox>
-                                    <Button Grid.Column="2" Command="{Binding ClearLoggerSearchCommand}">Clear</Button>
-                                </Grid>
-         
-                                <ListBox Grid.Row="1" ItemsSource="{Binding LoggerOptions}" VerticalAlignment="Stretch">
-                                    <ListBox.ItemTemplate>
-                                        <DataTemplate>
-                                            <StackPanel Orientation="Horizontal">
-                                                <CheckBox IsChecked="{Binding IsOn}" Content="{Binding Logger}"></CheckBox>
-                                                <Button Command="{Binding DataContext.GoToLoggerCommand, RelativeSource={RelativeSource FindAncestor, AncestorType=local:MainWindow}}" CommandParameter="{Binding Logger}" Margin="20,0,0,0" VerticalAlignment="Center">Go</Button>
-                                                <Button Command="{Binding DataContext.OnlyLoggerCommand, RelativeSource={RelativeSource FindAncestor, AncestorType=local:MainWindow}}" CommandParameter="{Binding Logger}" Margin="20,0,0,0" VerticalAlignment="Center">Only</Button>
-                                            </StackPanel>
-                                        </DataTemplate>
-                                    </ListBox.ItemTemplate>
-                                </ListBox>
-                            </Grid>
-                        </TabItem>
-                        <TabItem Header="Tree View">
-                            <TreeView ItemsSource="{Binding LoggerTreeRoot.Children}">
-                                <TreeView.ItemTemplate>
-                                    <HierarchicalDataTemplate ItemsSource="{Binding Children}">
-                                        <StackPanel Orientation="Horizontal">
-                                            <CheckBox IsChecked="{Binding IsChecked}" Content="{Binding Name}" />
-                                        </StackPanel>
-                                    </HierarchicalDataTemplate>
-                                </TreeView.ItemTemplate>
-                            </TreeView>
-                        </TabItem>
-                    </TabControl>
+                    <TreeView ItemsSource="{Binding LoggerTreeRoot.Children}">
+                    </TreeView>
                 </Grid>
 
                 <Grid>
-                    <Grid.Resources>
-                        <Style TargetType="Button" BasedOn="{StaticResource ButtonPanelButtonStyle}" />
-                    </Grid.Resources>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="30" />
                         <RowDefinition Height="Auto" />
@@ -172,10 +104,6 @@
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="30" />
                     </Grid.ColumnDefinitions>
-                    <StackPanel Grid.Column="1" Grid.Row="1" Margin="0,30,0,0">
-                        <Button Content="Clear" Command="{Binding ClearCommand}" />
-                        <Button Content="{Binding TogglePauseCommandContent}" Command="{Binding TogglePauseCommand}" />
-                    </StackPanel>
                 </Grid>
             </Grid>
 
