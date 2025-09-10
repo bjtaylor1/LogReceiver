@@ -26,19 +26,36 @@
             </Grid.RowDefinitions>
 
             <Grid>
+                
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"></ColumnDefinition>
                     <ColumnDefinition Width="8"></ColumnDefinition>
                     <ColumnDefinition Width="250"></ColumnDefinition>
                 </Grid.ColumnDefinitions>
 
-                <DataGrid ItemsSource="{Binding Events}" AutoGenerateColumns="False" x:Name="dataGrid"
-                          HorizontalAlignment="Stretch"
-                          GridLinesVisibility="None"
-                          CanUserAddRows="False"
-                          CanUserDeleteRows="False"
-                          IsReadOnly="True"
-                          SelectedItem="{Binding SelectedMessage}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"></RowDefinition>
+                    </Grid.RowDefinitions>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"></ColumnDefinition>
+                            <ColumnDefinition Width="*"></ColumnDefinition>
+                            <ColumnDefinition Width="Auto"></ColumnDefinition>
+                        </Grid.ColumnDefinitions>
+                        <Label Content="Search:"/>
+                        <TextBox Grid.Column="1" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"></TextBox>
+                        <Button Grid.Column="2" Command="{Binding ClearSearchCommand}">Clear</Button>
+                    </Grid>
+                    
+                    <DataGrid Grid.Row="1" ItemsSource="{Binding Events}" AutoGenerateColumns="False" x:Name="dataGrid"
+                              HorizontalAlignment="Stretch"
+                              GridLinesVisibility="None"
+                              CanUserAddRows="False"
+                              CanUserDeleteRows="False"
+                              IsReadOnly="True"
+                              SelectedItem="{Binding SelectedMessage}">
                     <DataGrid.RowStyle>
                         <Style TargetType="DataGridRow">
                             <EventSetter Event="RequestBringIntoView" Handler="HandleRequestBringIntoView" />
@@ -77,6 +94,7 @@
                         </DataGridTextColumn>
                     </DataGrid.Columns>
                 </DataGrid>
+                </Grid>
                 
                 <GridSplitter Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" ResizeBehavior="PreviousAndNext" ResizeDirection="Columns"></GridSplitter>
                 <Grid Grid.Column="2" VerticalAlignment="Stretch">
@@ -90,18 +108,55 @@
                         <Button Command="{Binding AllOnCommand}" Margin="10, 0, 0, 0">All on</Button>
                         <Button Command="{Binding AllOffCommand}" Margin="10, 0, 0, 0">All off</Button>
                     </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+                        <Button Command="{Binding ApplyFilterCommand}" Margin="0, 0, 5, 0">Apply Filter</Button>
+                        <Button Command="{Binding ClearFilterCommand}" Margin="5, 0, 0, 0">Clear Filter</Button>
+                    </StackPanel>
                     <Separator Grid.Row="1"></Separator>
                     
-                    <ListBox Grid.Row="2" ItemsSource="{Binding LoggerOptions}" VerticalAlignment="Stretch">
-                        <ListBox.ItemTemplate>
-                            <DataTemplate>
-                                <StackPanel Orientation="Horizontal">
-                                    <CheckBox IsChecked="{Binding IsOn}" Content="{Binding Logger}"></CheckBox>
-                                    <Button Command="{Binding DataContext.GoToLoggerCommand, RelativeSource={RelativeSource FindAncestor, AncestorType=local:MainWindow}}" CommandParameter="{Binding Logger}" Margin="20,0,0,0" VerticalAlignment="Center">Go</Button>
-                                </StackPanel>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
+                    <TabControl Grid.Row="2">
+                        <TabItem Header="Flat List">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"></RowDefinition>
+                                    <RowDefinition Height="*"></RowDefinition>
+                                </Grid.RowDefinitions>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"></ColumnDefinition>
+                                        <ColumnDefinition Width="*"></ColumnDefinition>
+                                        <ColumnDefinition Width="Auto"></ColumnDefinition>
+                                    </Grid.ColumnDefinitions>
+                                    <Label Content="Search:"/>
+                                    <TextBox Grid.Column="1" Text="{Binding LoggerSearchText, UpdateSourceTrigger=PropertyChanged}"></TextBox>
+                                    <Button Grid.Column="2" Command="{Binding ClearLoggerSearchCommand}">Clear</Button>
+                                </Grid>
+         
+                                <ListBox Grid.Row="1" ItemsSource="{Binding LoggerOptions}" VerticalAlignment="Stretch">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal">
+                                                <CheckBox IsChecked="{Binding IsOn}" Content="{Binding Logger}"></CheckBox>
+                                                <Button Command="{Binding DataContext.GoToLoggerCommand, RelativeSource={RelativeSource FindAncestor, AncestorType=local:MainWindow}}" CommandParameter="{Binding Logger}" Margin="20,0,0,0" VerticalAlignment="Center">Go</Button>
+                                                <Button Command="{Binding DataContext.OnlyLoggerCommand, RelativeSource={RelativeSource FindAncestor, AncestorType=local:MainWindow}}" CommandParameter="{Binding Logger}" Margin="20,0,0,0" VerticalAlignment="Center">Only</Button>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </Grid>
+                        </TabItem>
+                        <TabItem Header="Tree View">
+                            <TreeView ItemsSource="{Binding LoggerTreeRoot.Children}">
+                                <TreeView.ItemTemplate>
+                                    <HierarchicalDataTemplate ItemsSource="{Binding Children}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <CheckBox IsChecked="{Binding IsChecked}" Content="{Binding Name}" />
+                                        </StackPanel>
+                                    </HierarchicalDataTemplate>
+                                </TreeView.ItemTemplate>
+                            </TreeView>
+                        </TabItem>
+                    </TabControl>
                 </Grid>
 
                 <Grid>
@@ -118,7 +173,7 @@
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="30" />
                     </Grid.ColumnDefinitions>
-                    <StackPanel Grid.Column="1" Grid.Row="1">
+                    <StackPanel Grid.Column="1" Grid.Row="1" Margin="0,30,0,0">
                         <Button Content="Clear" Command="{Binding ClearCommand}" />
                         <Button Content="{Binding TogglePauseCommandContent}" Command="{Binding TogglePauseCommand}" />
                     </StackPanel>

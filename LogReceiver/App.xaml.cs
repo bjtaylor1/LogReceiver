@@ -13,12 +13,22 @@ namespace LogReceiver
     {
         protected override void OnStartup(StartupEventArgs e)
         {
+            // Check for single instance
+            if (!SingleInstanceManager.IsFirstInstance())
+            {
+                // Another instance is already running, exit this one
+                Current.Shutdown();
+                return;
+            }
+
             base.OnStartup(e);
         }
 
         protected override void OnExit(ExitEventArgs e)
         {
             Interlocked.Increment(ref LogListener.Running);
+            LogListener.Stop();
+            SingleInstanceManager.ReleaseMutex();
             base.OnExit(e);
         }
 

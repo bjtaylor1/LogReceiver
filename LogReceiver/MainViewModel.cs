@@ -1,17 +1,19 @@
-﻿using System.Collections.Concurrent;
+﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Configuration;
 using System.Linq;
-using System.Windows.Controls;
+using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
+using System.Windows.Threading;
 using Prism.Commands;
 using Prism.Events;
+using ThrottleDebounce;
 
 namespace LogReceiver
 {
-    public class MainViewModel : INotifyPropertyChanged
+    public class MainViewModel : INotifyPropertyChanged, IDisposable
     {
         private readonly List<MessageData> eventList;
         
@@ -22,10 +24,21 @@ namespace LogReceiver
         public ICommand ClearCommand { get; }
         public ICommand ClearTreeCommand { get; }
         public ICommand TogglePauseCommand { get; }
+        public ICommand ApplyFilterCommand { get; }
+        public ICommand ClearFilterCommand { get; }
+        public ICommand ClearSearchCommand { get; }
+        public ICommand ClearLoggerSearchCommand { get; }
+        
+        
 
         private readonly Dictionary<string, LoggerOption> loggerOptionsDictionary;
         private readonly List<LoggerOption> loggerOptionsList;
+        private readonly LoggerTreeBuilder loggerTreeBuilder;
+        private string searchText;
+        private string loggerSearchText;
+        private bool filterApplied = false;
         public ListCollectionView LoggerOptions { get; }
+        public LoggerNodeModel LoggerTreeRoot => loggerTreeBuilder.RootNode;
 
         protected void BeginInvokePropertyChanged(string propertyName)
         {
@@ -58,6 +71,39 @@ namespace LogReceiver
             }
         }
 
+        public string SearchText
+        {
+            get => searchText;
+            set
+            {
+                if (searchText != value)
+                {
+                    searchText = value;
+                    BeginInvokePropertyChanged(nameof(SearchText));
+                    Events.IsLiveFiltering = !string.IsNullOrEmpty(value);
+                    debouncedRefresh.Invoke();
+                }
+            }
+        }
+
+        public string LoggerSearchText
+        {
+            get => loggerSearchText;
+            set
+            {
+                if (loggerSearchText != value)
+                {
+                    loggerSearchText = value;
+                    BeginInvokePropertyChanged(nameof(LoggerSearchText));
+                    LoggerOptions.IsLiveFiltering = !string.IsNullOrEmpty(value);
+                    debouncedLoggerRefresh.Invoke();
+                }
+            }
+        }
+
+        private RateLimitedAction debouncedRefresh;
+        private RateLimitedAction debouncedLoggerRefresh;
+
         public MessageData SelectedMessage
         {
             get { return selectedMessage; }
@@ -74,6 +120,7 @@ namespace LogReceiver
         public string TogglePauseCommandContent => IsPaused ? "Resume" : "Pause";
 
         public ListCollectionView Events { get; }
+        private DispatcherTimer typeTimer = new DispatcherTimer();
         
         public MainViewModel()
         {
@@ -83,14 +130,88 @@ namespace LogReceiver
             loggerOptionsList = new List<LoggerOption>();
             LoggerOptions = new ListCollectionView(loggerOptionsList);
             loggerOptionsDictionary = new Dictionary<string, LoggerOption>();
+            loggerTreeBuilder = new LoggerTreeBuilder();
+            
             ClearCommand = new DelegateCommand(Clear);
             TogglePauseCommand = new DelegateCommand(TogglePause);
+            ApplyFilterCommand = new DelegateCommand(ApplyFilter);
+            ClearFilterCommand = new DelegateCommand(ClearFilter);
             AllOnCommand = new DelegateCommand(AllOn);
             AllOffCommand = new DelegateCommand(AllOff);
             GoToLoggerCommand = new DelegateCommand<string>(GoToLogger);
+            OnlyLoggerCommand = new DelegateCommand<string>(OnlyLogger);
+            ClearSearchCommand = new DelegateCommand(ClearSearch);
+            ClearLoggerSearchCommand = new DelegateCommand(ClearLoggerSearch);
+            Events.Filter = EventFilter;
+            LoggerOptions.Filter = LoggerFilter;
+            
+            debouncedRefresh = Debouncer.Debounce(() => Application.Current.Dispatcher.Invoke(() =>
+            {
+                Events.Refresh();
+            }), TimeSpan.FromSeconds(0.5));
+            debouncedLoggerRefresh = Debouncer.Debounce(() => Application.Current.Dispatcher.Invoke(() =>
+            {
+                LoggerOptions.Refresh();
+            }), TimeSpan.FromSeconds(0.5));
+        }
+
+        private bool EventFilter(object obj)
+        {
+            var m = (MessageData)obj;
+            
+            // Text search filter
+            var passesTextFilter = string.IsNullOrEmpty(SearchText) || 
+                                   m.Message.IndexOf(SearchText, StringComparison.OrdinalIgnoreCase) >= 0;
+            
+            if (!passesTextFilter)
+                return false;
+            
+            // Logger filter - only apply if filter has been explicitly applied
+            if (filterApplied)
+            {
+                return loggerTreeBuilder.IsLoggerEnabled(m.Logger);
+            }
+            
+            // Fallback to old system if tree not being used
+            return !loggerOptionsDictionary.TryGetValue(m.Logger, out var loggerOption) || loggerOption.IsOn;
+        }
+
+        private bool LoggerFilter(object obj)
+        {
+            var m = (LoggerOption)obj;            
+            return string.IsNullOrEmpty(LoggerSearchText) || m.Logger.IndexOf(LoggerSearchText, StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private void ClearSearch()
+        {
+            SearchText = string.Empty;
+            Events.Refresh();
+        }
+        private void ClearLoggerSearch()
+        {
+            LoggerSearchText = string.Empty;
+            LoggerOptions.Refresh();
+        }
+
+        private void ApplyFilter()
+        {
+            filterApplied = true;
+            Events.Refresh();
+        }
+
+        private void ClearFilter()
+        {
+            filterApplied = false;
+            // Reset all loggers to checked state
+            foreach (var node in loggerTreeBuilder.RootNode.Children)
+            {
+                node.CheckState = CheckState.Checked;
+            }
+            Events.Refresh();
         }
 
         public DelegateCommand<string> GoToLoggerCommand { get; set; }
+        public DelegateCommand<string> OnlyLoggerCommand { get; set; }
 
         public DelegateCommand AllOffCommand { get; set; }
 
@@ -121,6 +242,20 @@ namespace LogReceiver
             }
         }
 
+        private void OnlyLogger(string logger)
+        {
+            using (Events.DeferRefresh())
+            {
+                using (LoggerOptions.DeferRefresh())
+                {
+                    foreach (var loggerOption in loggerOptionsList)
+                    {
+                        loggerOption.IsOn = string.Equals(loggerOption.Logger, logger);
+                    }
+                }
+            }
+        }
+
         private void TogglePause()
         {
             IsPaused = !IsPaused;
@@ -132,7 +267,6 @@ namespace LogReceiver
             Events.Refresh();
         }
 
-        private static readonly ConcurrentDictionary<string, bool> filterCache = new ConcurrentDictionary<string, bool>();
         public event PropertyChangedEventHandler PropertyChanged;
 
 
@@ -140,6 +274,10 @@ namespace LogReceiver
         {
             if (!IsPaused)
             {
+                // Add to hierarchical tree
+                loggerTreeBuilder.AddLogger(msg.Logger);
+                
+                // Maintain compatibility with old system
                 LoggerOption loggerOption;
                 if (!loggerOptionsDictionary.TryGetValue(msg.Logger, out loggerOption))
                 {
@@ -151,10 +289,8 @@ namespace LogReceiver
                     LoggerOptions.Refresh();
                 }
 
-                if (loggerOption.IsOn)
-                {
-                    eventList.Add(msg);
-                }
+                // Always add message to list - filtering happens in view
+                eventList.Add(msg);
 
                 if (eventList.Count > 5000)
                 {
@@ -166,11 +302,15 @@ namespace LogReceiver
 
         private void HandleLoggerPropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(LoggerOption.IsOn) && sender is LoggerOption loggerOption && !loggerOption.IsOn)
+            if (e.PropertyName == nameof(LoggerOption.IsOn))
             {
-                eventList.RemoveAll(@event => @event.Logger == loggerOption.Logger);
-                Events.Refresh();
+                debouncedRefresh.Invoke();
             }
+        }
+
+        public void Dispose()
+        {
+            // TODO release managed resources here
         }
     }
 }

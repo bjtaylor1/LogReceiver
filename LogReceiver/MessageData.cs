@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Linq;
 
 namespace LogReceiver
 
@@ -40,16 +41,26 @@ namespace LogReceiver
 
         public static MessageData Parse(string input)
         {
-            var parts = input.Split(new[] { '|' }, 4);
-            if (parts.Length == 4 && DateTime.TryParse(parts[0], out var timestamp))
+            var parts = input.Split('|');
+            
+            // Handle new format with sequence IDs: sequenceid|timestamp|level|logger|message|sequenceid
+            if (parts.Length >= 6 && 
+                long.TryParse(parts[0], out _) && 
+                DateTime.TryParse(parts[1], out var timestampNew))
             {
+                // Extract message content (everything between logger and final sequence ID)
+                var messageStartIndex = 4;
+                var messageEndIndex = parts.Length - 2;
+                var messageParts = parts.Skip(messageStartIndex).Take(messageEndIndex - messageStartIndex + 1);
+                var message = string.Join("|", messageParts);
+                
                 var @event = new MessageData
                 {
-                    TimeStamp = timestamp,
-                    Level = parts[1],
-                    Logger = parts[2],
-                    Message = parts[3],
-                    SingleLineMessage = parts[3].Replace("\n", " ").Replace("\r", "")
+                    TimeStamp = timestampNew,
+                    Level = parts[2],
+                    Logger = parts[3],
+                    Message = message,
+                    SingleLineMessage = message.Replace("\n", " ").Replace("\r", "")
                 };
                 if (@event.SingleLineMessage.Length > 255)
                 {
@@ -57,7 +68,29 @@ namespace LogReceiver
                 }
                 return @event;
             }
-            else return null;
+            
+            // Handle legacy format: timestamp|level|logger|message
+            else if (parts.Length >= 4 && DateTime.TryParse(parts[0], out var timestamp))
+            {
+                // Extract message content (everything from index 3 onwards)
+                var message = string.Join("|", parts.Skip(3));
+                
+                var @event = new MessageData
+                {
+                    TimeStamp = timestamp,
+                    Level = parts[1],
+                    Logger = parts[2],
+                    Message = message,
+                    SingleLineMessage = message.Replace("\n", " ").Replace("\r", "")
+                };
+                if (@event.SingleLineMessage.Length > 255)
+                {
+                    @event.SingleLineMessage = @event.SingleLineMessage.Substring(0, 255);
+                }
+                return @event;
+            }
+            
+            return null;
         }
     }
 }

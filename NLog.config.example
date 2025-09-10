@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<nlog xmlns="http://www.nlog-project.org/schemas/NLog.xsd"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+  <!-- Named Pipe Target Configuration for LogReceiver -->
+  <targets>
+    <target xsi:type="NamedPipe" 
+            name="logReceiver" 
+            pipeName="LogReceiverPipe"
+            layout="${longdate}|${level:uppercase=true}|${logger}|${message}${newline}${exception:format=tostring}${literal:text=\0}" />
+  </targets>
+
+  <!-- Logging Rules -->
+  <rules>
+    <!-- Send all logs to the LogReceiver via named pipe -->
+    <logger name="*" minlevel="Trace" writeTo="logReceiver" />
+  </rules>
+
+</nlog>
+
+<!-- 
+  IMPORTANT NOTES:
+  
+  1. Place this file in your logging application's directory (the app that SENDS logs)
+  2. Make sure your logging application references NLog
+  3. The LogReceiver must be running BEFORE your logging application starts
+  4. The pipeName "LogReceiverPipe" matches what's configured in LogReceiver
+  5. The layout uses \0 (null character) as message separator to handle multi-line exceptions
+  
+  Example C# usage in your logging application:
+  
+  private static readonly Logger logger = LogManager.GetCurrentClassLogger();
+  
+  logger.Info("This message will appear in LogReceiver");
+  logger.Error(exception, "Error with full stack trace");
+  
+  MULTI-LINE MESSAGE HANDLING:
+  - Stack traces and exceptions preserve their formatting
+  - Each complete log entry (including multi-line exceptions) is treated as one message
+  - The \0 separator ensures proper message boundaries
+  
+  ADVANTAGES OF NAMED PIPES OVER UDP:
+  - No message fragmentation
+  - Guaranteed delivery order
+  - Better performance for local logging
+  - No network configuration required
+  - No firewall issues
+  - Proper multi-line message handling
+-->
