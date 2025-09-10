@@ -180,6 +180,7 @@ namespace LogReceiver
             }), TimeSpan.FromSeconds(0.5));
             debouncedLoggerRefresh = Debouncer.Debounce(() => Application.Current.Dispatcher.Invoke(() =>
             {
+                _filteredTreeViewModel.OnLoggerStateChanged();
                 LoggerOptions.Refresh();
             }), TimeSpan.FromSeconds(0.5));
         }
@@ -276,8 +277,12 @@ namespace LogReceiver
                     loggerOption = new LoggerOption(msg.Logger) { IsOn = DefaultLoggerOption };
                     loggerOption.PropertyChanged += HandleLoggerPropertyChanged;
                     loggerOptionsDictionary.Add(msg.Logger, loggerOption);
-                    loggerOptionsList.Clear();
-                    loggerOptionsList.AddRange(loggerOptionsDictionary.OrderBy(d => d.Key).Select(d => d.Value));
+                    
+                    // More efficient: just add the new item in sorted position instead of rebuilding entire list
+                    var insertIndex = loggerOptionsList.BinarySearch(loggerOption, Comparer<LoggerOption>.Create((x, y) => string.Compare(x.Logger, y.Logger)));
+                    if (insertIndex < 0) insertIndex = ~insertIndex;
+                    loggerOptionsList.Insert(insertIndex, loggerOption);
+                    
                     LoggerOptions.Refresh();
                 }
 
@@ -347,15 +352,21 @@ namespace LogReceiver
         /// </summary>
         private void OnLoggerCheckStateChanged(LoggerNodeModel node)
         {
-            _filteredTreeViewModel.OnLoggerStateChanged();
-            
-            // Refresh events when logger check states change
+            // Debounce the cache updates to avoid thrashing during recursive updates
+            debouncedLoggerRefresh.Invoke();
             debouncedRefresh.Invoke();
         }
 
         public void Dispose()
         {
             LoggerNodeModel.CheckStateChanged -= OnLoggerCheckStateChanged;
+            
+            // Clean up property change subscriptions
+            foreach (var loggerOption in loggerOptionsDictionary.Values)
+            {
+                loggerOption.PropertyChanged -= HandleLoggerPropertyChanged;
+            }
+            
             // TODO release managed resources here
         }
     }

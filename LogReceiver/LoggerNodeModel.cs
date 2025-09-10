@@ -19,6 +19,7 @@ namespace LogReceiver
         private CheckState _checkState = CheckState.Checked;
         private bool _isExpanded = false;
         private readonly ObservableCollection<LoggerNodeModel> _children = new ObservableCollection<LoggerNodeModel>();
+        private bool _suppressEvents = false;
 
         public static event Action<LoggerNodeModel> CheckStateChanged;
 
@@ -37,8 +38,11 @@ namespace LogReceiver
                     OnPropertyChanged();
                     OnPropertyChanged(nameof(IsChecked));
                     
-                    // Notify about check state change for filtering
-                    CheckStateChanged?.Invoke(this);
+                    // Notify about check state change for filtering (only if not suppressed)
+                    if (!_suppressEvents)
+                    {
+                        CheckStateChanged?.Invoke(this);
+                    }
                     
                     // Update children
                     if (value != CheckState.Indeterminate)
@@ -135,11 +139,20 @@ namespace LogReceiver
 
         private void SetIsCheckedRecursive(bool isChecked, bool updateParent = true)
         {
-            CheckState = isChecked ? CheckState.Checked : CheckState.Unchecked;
-            
-            foreach (var child in Children)
+            // Suppress events during recursive updates to prevent event cascade
+            _suppressEvents = true;
+            try
             {
-                child.SetIsCheckedRecursive(isChecked, false);
+                CheckState = isChecked ? CheckState.Checked : CheckState.Unchecked;
+                
+                foreach (var child in Children)
+                {
+                    child.SetIsCheckedRecursive(isChecked, false);
+                }
+            }
+            finally
+            {
+                _suppressEvents = false;
             }
             
             if (updateParent)
@@ -175,7 +188,13 @@ namespace LogReceiver
                 _checkState = newState;
                 OnPropertyChanged(nameof(CheckState));
                 OnPropertyChanged(nameof(IsChecked));
-                CheckStateChanged?.Invoke(this);
+                
+                // Only fire event if not suppressed
+                if (!_suppressEvents)
+                {
+                    CheckStateChanged?.Invoke(this);
+                }
+                
                 Parent?.UpdateCheckStateFromChildren();
             }
         }

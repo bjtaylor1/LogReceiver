@@ -11,6 +11,7 @@ namespace LogReceiver
     {
         private readonly LoggerNodeModel _rootNode;
         private readonly Dictionary<string, LoggerNodeModel> _allNodes;
+        private readonly object _lockObject = new object();
 
         public LoggerTreeBuilder()
         {
@@ -35,31 +36,34 @@ namespace LogReceiver
             if (string.IsNullOrEmpty(loggerName))
                 return null;
 
-            if (_allNodes.TryGetValue(loggerName, out var existingNode))
-                return null; // Return null if logger already exists
-
-            var parts = loggerName.Split('.');
-            var currentNode = _rootNode;
-            var currentPath = "";
-
-            for (int i = 0; i < parts.Length; i++)
+            lock (_lockObject)
             {
-                var part = parts[i];
-                currentPath = string.IsNullOrEmpty(currentPath) ? part : $"{currentPath}.{part}";
+                if (_allNodes.TryGetValue(loggerName, out var existingNode))
+                    return null; // Return null if logger already exists
 
-                if (_allNodes.TryGetValue(currentPath, out var existingChild))
+                var parts = loggerName.Split('.');
+                var currentNode = _rootNode;
+                var currentPath = "";
+
+                for (int i = 0; i < parts.Length; i++)
                 {
-                    currentNode = existingChild;
+                    var part = parts[i];
+                    currentPath = string.IsNullOrEmpty(currentPath) ? part : $"{currentPath}.{part}";
+
+                    if (_allNodes.TryGetValue(currentPath, out var existingChild))
+                    {
+                        currentNode = existingChild;
+                    }
+                    else
+                    {
+                        var newNode = currentNode.FindOrCreateChild(part, currentPath);
+                        _allNodes[currentPath] = newNode;
+                        currentNode = newNode;
+                    }
                 }
-                else
-                {
-                    var newNode = currentNode.FindOrCreateChild(part, currentPath);
-                    _allNodes[currentPath] = newNode;
-                    currentNode = newNode;
-                }
+
+                return currentNode;
             }
-
-            return currentNode;
         }
 
         /// <summary>
@@ -69,18 +73,21 @@ namespace LogReceiver
         {
             var enabledLoggers = new HashSet<string>();
             
-            foreach (var node in _allNodes.Values)
+            lock (_lockObject)
             {
-                if (node.IsLeafNode && node.CheckState == CheckState.Checked)
+                foreach (var node in _allNodes.Values)
                 {
-                    enabledLoggers.Add(node.FullLoggerName);
-                }
-                else if (node.CheckState == CheckState.Checked && node.HasChildren)
-                {
-                    // If a parent is checked, include all its leaf descendants
-                    foreach (var leafLogger in node.GetEnabledLoggerNames())
+                    if (node.IsLeafNode && node.CheckState == CheckState.Checked)
                     {
-                        enabledLoggers.Add(leafLogger);
+                        enabledLoggers.Add(node.FullLoggerName);
+                    }
+                    else if (node.CheckState == CheckState.Checked && node.HasChildren)
+                    {
+                        // If a parent is checked, include all its leaf descendants
+                        foreach (var leafLogger in node.GetEnabledLoggerNames())
+                        {
+                            enabledLoggers.Add(leafLogger);
+                        }
                     }
                 }
             }
@@ -96,36 +103,39 @@ namespace LogReceiver
             if (string.IsNullOrEmpty(loggerName))
                 return false;
 
-            // Check if the exact logger is enabled
-            if (_allNodes.TryGetValue(loggerName, out var node))
+            lock (_lockObject)
             {
-                return node.CheckState == CheckState.Checked;
-            }
-
-            // Check if any parent logger is enabled (for hierarchical inclusion)
-            var parts = loggerName.Split('.');
-            var currentPath = "";
-            
-            for (int i = 0; i < parts.Length; i++)
-            {
-                currentPath = string.IsNullOrEmpty(currentPath) ? parts[i] : $"{currentPath}.{parts[i]}";
-                
-                if (_allNodes.TryGetValue(currentPath, out var parentNode))
+                // Check if the exact logger is enabled
+                if (_allNodes.TryGetValue(loggerName, out var node))
                 {
-                    if (parentNode.CheckState == CheckState.Checked)
+                    return node.CheckState == CheckState.Checked;
+                }
+
+                // Check if any parent logger is enabled (for hierarchical inclusion)
+                var parts = loggerName.Split('.');
+                var currentPath = "";
+                
+                for (int i = 0; i < parts.Length; i++)
+                {
+                    currentPath = string.IsNullOrEmpty(currentPath) ? parts[i] : $"{currentPath}.{parts[i]}";
+                    
+                    if (_allNodes.TryGetValue(currentPath, out var parentNode))
                     {
-                        return true;
-                    }
-                    else if (parentNode.CheckState == CheckState.Unchecked)
-                    {
-                        return false; // Explicitly disabled by parent
+                        if (parentNode.CheckState == CheckState.Checked)
+                        {
+                            return true;
+                        }
+                        else if (parentNode.CheckState == CheckState.Unchecked)
+                        {
+                            return false; // Explicitly disabled by parent
+                        }
                     }
                 }
-            }
 
-            // If logger doesn't exist in tree yet, it should be enabled by default
-            // This handles the case where new loggers arrive before being added to the tree
-            return true;
+                // If logger doesn't exist in tree yet, it should be enabled by default
+                // This handles the case where new loggers arrive before being added to the tree
+                return true;
+            }
         }
 
         /// <summary>
@@ -133,8 +143,11 @@ namespace LogReceiver
         /// </summary>
         public LoggerNodeModel GetNode(string loggerName)
         {
-            _allNodes.TryGetValue(loggerName, out var node);
-            return node;
+            lock (_lockObject)
+            {
+                _allNodes.TryGetValue(loggerName, out var node);
+                return node;
+            }
         }
 
         /// <summary>
@@ -147,8 +160,13 @@ namespace LogReceiver
                 return _rootNode.Children;
             }
 
-            return _allNodes.Values
-                .Where(node => node.FullLoggerName.IndexOf(searchText, StringComparison.OrdinalIgnoreCase) >= 0);
+            lock (_lockObject)
+            {
+                // Take a snapshot to avoid collection modification during enumeration
+                return _allNodes.Values
+                    .Where(node => node.FullLoggerName.IndexOf(searchText, StringComparison.OrdinalIgnoreCase) >= 0)
+                    .ToList(); // Materialize to avoid holding lock during enumeration
+            }
         }
     }
 }
