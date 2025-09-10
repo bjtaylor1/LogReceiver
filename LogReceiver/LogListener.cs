@@ -3,7 +3,8 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Diagnostics;
 using System.IO;
-using System.IO.Pipes;
+using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,15 +15,17 @@ namespace LogReceiver
     {
         public static ManualResetEventSlim StoppedEvent = new ManualResetEventSlim();
         public static long Running = 0;
-        private static readonly string pipeName = ConfigurationManager.AppSettings["pipeName"] ?? "LogReceiverPipe";
-        private static NamedPipeServerStream pipeServer;
+        private static readonly int port = int.Parse(ConfigurationManager.AppSettings["tcpPort"] ?? "4505");
+        private static TcpListener tcpListener;
         private static CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
 
         internal static async Task Listen()
         {
             try
             {
-                Debug.WriteLine($"Starting Named Pipe Server: {pipeName}");
+                tcpListener = new TcpListener(IPAddress.Loopback, port);
+                tcpListener.Start();
+                Debug.WriteLine($"Starting TCP Server on port: {port}");
                 var messageEvent = App.EventAggregator.Value.GetEvent<MessageEvent>();
                 
                 while (!cancellationTokenSource.Token.IsCancellationRequested)
@@ -32,14 +35,15 @@ namespace LogReceiver
             }
             catch (OperationCanceledException)
             {
-                Debug.WriteLine("Named pipe listener stopped");
+                Debug.WriteLine("TCP listener stopped");
             }
             catch (Exception e)
             {
-                Debug.WriteLine($"Fatal exception in named pipe listener: {e}");
+                Debug.WriteLine($"Fatal exception in TCP listener: {e}");
             }
             finally
             {
+                tcpListener?.Stop();
                 StoppedEvent.Set();
             }
         }
@@ -48,42 +52,42 @@ namespace LogReceiver
         {
             try
             {
-                // Create a new pipe server for each connection
-                using (pipeServer = new NamedPipeServerStream(pipeName, PipeDirection.In, 
-                       NamedPipeServerStream.MaxAllowedServerInstances, PipeTransmissionMode.Message))
+                Debug.WriteLine("Waiting for TCP client connection...");
+                
+                // Wait for a client to connect
+                var tcpClient = await tcpListener.AcceptTcpClientAsync();
+                Debug.WriteLine($"TCP client connected from: {tcpClient.Client.RemoteEndPoint}");
+                
+                using (tcpClient)
+                using (var stream = tcpClient.GetStream())
                 {
-                    Debug.WriteLine("Waiting for client connection...");
-                    
-                    // Wait for a client to connect
-                    await pipeServer.WaitForConnectionAsync(cancellationTokenSource.Token);
-                    Debug.WriteLine("Client connected to named pipe");
-                    
-                    await ProcessClientMessages(messageEvent);
-                    
-                    Debug.WriteLine("Client disconnected from named pipe");
+                    await ProcessClientMessages(stream, messageEvent);
                 }
+                
+                Debug.WriteLine("TCP client disconnected");
             }
-            catch (IOException e) when (e.Message.Contains("pipe is being closed"))
+            catch (ObjectDisposedException)
             {
-                Debug.WriteLine("Pipe closed gracefully");
+                Debug.WriteLine("TCP listener disposed");
+                throw new OperationCanceledException(); // Convert to cancellation to break the outer loop
             }
             catch (OperationCanceledException)
             {
-                Debug.WriteLine("Named pipe listener cancelled");
+                Debug.WriteLine("TCP listener cancelled");
                 throw; // Re-throw to break the outer loop
             }
             catch (Exception e)
             {
-                Debug.WriteLine($"Named pipe error: {e}");
-                // Wait a bit before trying to create a new pipe server
+                Debug.WriteLine($"TCP connection error: {e}");
+                // Wait a bit before accepting the next connection
                 await Task.Delay(1000, cancellationTokenSource.Token);
             }
         }
 
-        private static async Task ProcessClientMessages(MessageEvent messageEvent)
+        private static async Task ProcessClientMessages(NetworkStream stream, MessageEvent messageEvent)
         {
             // Read complete messages from the connected client
-            // NLog sends each log entry terminated with \0 delimiter
+            // Messages are terminated with null byte (\0) to handle multi-line log entries
             var buffer = new byte[1];
             var messageBytes = new List<byte>();
             
@@ -91,7 +95,7 @@ namespace LogReceiver
             {
                 try
                 {
-                    int bytesRead = await pipeServer.ReadAsync(buffer, 0, 1, cancellationTokenSource.Token);
+                    int bytesRead = await stream.ReadAsync(buffer, 0, 1, cancellationTokenSource.Token);
                     if (bytesRead == 0)
                         break; // Client disconnected
                     
@@ -99,7 +103,7 @@ namespace LogReceiver
                 }
                 catch (Exception e)
                 {
-                    Debug.WriteLine($"Error reading from pipe: {e}");
+                    Debug.WriteLine($"Error reading from TCP stream: {e}");
                     break;
                 }
             }
@@ -107,7 +111,7 @@ namespace LogReceiver
 
         private static void ProcessReceivedByte(byte receivedByte, List<byte> messageBytes, MessageEvent messageEvent)
         {
-            if (receivedByte == 0) // Found message delimiter
+            if (receivedByte == 0) // Found null byte delimiter (\0)
             {
                 if (messageBytes.Count > 0)
                 {
@@ -167,12 +171,15 @@ namespace LogReceiver
             
             try
             {
-                pipeServer?.Dispose();
+                tcpListener?.Stop();
             }
             catch (Exception e)
             {
-                Debug.WriteLine($"Error disposing pipe server: {e}");
+                Debug.WriteLine($"Error stopping TCP listener: {e}");
             }
+            
+            // Ensure the stopped event is always set
+            StoppedEvent.Set();
         }
     }
 }
