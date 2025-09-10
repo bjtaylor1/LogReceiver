@@ -62,7 +62,7 @@ namespace LogReceiver
                 using (tcpClient)
                 using (var stream = tcpClient.GetStream())
                 {
-                    await ProcessClientMessages(stream, messageEvent);
+                    await JsonMessageParser.ProcessAsync<MessageData>(stream, m => ProcessCompleteMessage(m, messageEvent), cancellationTokenSource.Token).ConfigureAwait(false);
                 }
                 
                 Debug.WriteLine("TCP client disconnected");
@@ -85,12 +85,6 @@ namespace LogReceiver
             }
         }
 
-        private static async Task ProcessClientMessages(NetworkStream stream, MessageEvent messageEvent)
-        {
-        }
-
-
-
         private static void ProcessCompleteMessage(MessageData messageData, MessageEvent messageEvent)
         {
             if (messageData == null)
@@ -109,7 +103,6 @@ namespace LogReceiver
                         Level = "ERROR",
                         Logger = "SYSTEM",
                         Message = messageData.Message ?? "(no message)",
-                        SingleLineMessage = "(message with missing logger - investigate logger!)",
                         TimeStamp = DateTime.Now
                     });
                 }
@@ -122,7 +115,6 @@ namespace LogReceiver
                     Level = "ERROR",
                     Logger = "SYSTEM",
                     Message = $"Exception processing message: {e.Message}",
-                    SingleLineMessage = $"Exception processing message: {e.Message}",
                     TimeStamp = DateTime.Now
                 });
             }

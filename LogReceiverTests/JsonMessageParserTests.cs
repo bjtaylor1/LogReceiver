@@ -23,7 +23,7 @@ namespace LogReceiverTests
             var cancellationToken = new CancellationToken();
 
             // Act
-            await JsonMessageParser.Process<MessageData>(stream, message => receivedMessages.Add(message), cancellationToken);
+            await JsonMessageParser.ProcessAsync<MessageData>(stream, message => receivedMessages.Add(message), cancellationToken);
 
             // Assert
             Assert.AreEqual(1, receivedMessages.Count);
@@ -41,7 +41,7 @@ namespace LogReceiverTests
             var cancellationToken = new CancellationToken();
 
             // Act
-            await JsonMessageParser.Process<MessageData>(stream, message => receivedMessages.Add(message), cancellationToken);
+            await JsonMessageParser.ProcessAsync<MessageData>(stream, message => receivedMessages.Add(message), cancellationToken);
 
             // Assert
             Assert.AreEqual(2, receivedMessages.Count);
@@ -65,7 +65,7 @@ namespace LogReceiverTests
             var cancellationToken = new CancellationToken();
 
             // Act
-            await JsonMessageParser.Process<MessageData>(stream, message => receivedMessages.Add(message), cancellationToken);
+            await JsonMessageParser.ProcessAsync<MessageData>(stream, message => receivedMessages.Add(message), cancellationToken);
 
             // Assert
             Assert.AreEqual(3, receivedMessages.Count);
@@ -89,7 +89,7 @@ namespace LogReceiverTests
             var cancellationToken = new CancellationToken();
 
             // Act
-            await JsonMessageParser.Process<MessageData>(stream, message => receivedMessages.Add(message), cancellationToken);
+            await JsonMessageParser.ProcessAsync<MessageData>(stream, message => receivedMessages.Add(message), cancellationToken);
 
             // Assert
             Assert.AreEqual(0, receivedMessages.Count);
@@ -105,7 +105,7 @@ namespace LogReceiverTests
             var cancellationToken = new CancellationToken();
 
             // Act
-            await JsonMessageParser.Process<MessageData>(stream, message => receivedMessages.Add(message), cancellationToken);
+            await JsonMessageParser.ProcessAsync<MessageData>(stream, message => receivedMessages.Add(message), cancellationToken);
 
             // Assert
             Assert.AreEqual(0, receivedMessages.Count);
@@ -122,7 +122,7 @@ namespace LogReceiverTests
 
             // Act
             cancellationTokenSource.Cancel(); // Cancel immediately
-            await JsonMessageParser.Process<MessageData>(stream, message => receivedMessages.Add(message), cancellationTokenSource.Token);
+            await JsonMessageParser.ProcessAsync<MessageData>(stream, message => receivedMessages.Add(message), cancellationTokenSource.Token);
 
             // Assert
             Assert.AreEqual(0, receivedMessages.Count);
@@ -138,7 +138,7 @@ namespace LogReceiverTests
             var cancellationToken = new CancellationToken();
 
             // Act
-            await JsonMessageParser.Process<TestMessage>(stream, message => receivedMessages.Add(message), cancellationToken);
+            await JsonMessageParser.ProcessAsync<TestMessage>(stream, message => receivedMessages.Add(message), cancellationToken);
 
             // Assert
             Assert.AreEqual(1, receivedMessages.Count);
@@ -158,7 +158,7 @@ namespace LogReceiverTests
             var cancellationToken = new CancellationToken();
 
             // Act
-            await JsonMessageParser.Process<MessageData>(stream, message => receivedMessages.Add(message), cancellationToken);
+            await JsonMessageParser.ProcessAsync<MessageData>(stream, message => receivedMessages.Add(message), cancellationToken);
 
             // Assert
             Assert.AreEqual(4, receivedMessages.Count);

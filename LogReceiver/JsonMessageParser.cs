@@ -10,7 +10,7 @@ namespace LogReceiver
 {
     public static class JsonMessageParser
     {
-        public static async Task Process<T>(Stream input, Action<T> messageReceived, CancellationToken cancellationToken)
+        public static async Task ProcessAsync<T>(Stream input, Action<T> messageReceived, CancellationToken cancellationToken)
         {
             using var textReader = new StreamReader(input);
             using var reader = new JsonTextReader(textReader) { SupportMultipleContent = true };

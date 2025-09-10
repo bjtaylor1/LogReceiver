@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Text.RegularExpressions;
 using Newtonsoft.Json;
 
 namespace LogReceiver
@@ -25,7 +26,8 @@ namespace LogReceiver
         [JsonProperty("exception")]
         public string Exception { get; set; }
 
-        public string SingleLineMessage { get; set; }
+        private static readonly Regex FirstLineMatch = new(@"^([^\r\n]*)");
+        public string SingleLineMessage => FirstLineMatch.Match(Message ?? "").Groups[1].Value;
         
         public bool IsHighlighted
         {
@@ -46,55 +48,5 @@ namespace LogReceiver
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
-
-        public static MessageData Parse(string input)
-        {
-            if (string.IsNullOrWhiteSpace(input))
-                return null;
-
-            // Parse JSON format from NLog JsonLayout
-            // Expected format: {"time":"2025-09-10T15:52:00.0000000Z","level":"INFO","logger":"BT.Debug","message":"this is the message\n","exception":"..."}
-            try
-            {
-                var messageData = JsonConvert.DeserializeObject<MessageData>(input);
-                if (messageData != null)
-                {
-                    // Combine message and exception if both exist
-                    if (!string.IsNullOrEmpty(messageData.Exception))
-                    {
-                        var combinedMessage = string.IsNullOrEmpty(messageData.Message) 
-                            ? messageData.Exception 
-                            : $"{messageData.Message}\n{messageData.Exception}";
-                        messageData.Message = combinedMessage;
-                    }
-                    
-                    // Set SingleLineMessage for display
-                    messageData.SingleLineMessage = (messageData.Message ?? "").Replace("\n", " ").Replace("\r", "");
-                    if (messageData.SingleLineMessage.Length > 255)
-                    {
-                        messageData.SingleLineMessage = messageData.SingleLineMessage.Substring(0, 255);
-                    }
-                    
-                    // Set defaults if needed
-                    messageData.Level = messageData.Level ?? "INFO";
-                    messageData.Logger = messageData.Logger ?? "Unknown";
-                    messageData.Message = messageData.Message ?? "";
-                    
-                    return messageData;
-                }
-            }
-            catch (JsonException e)
-            {
-                Debug.WriteLine($"Error parsing JSON message: {e}");
-            }
-            catch (Exception e)
-            {
-                Debug.WriteLine($"Error processing JSON message: {e}");
-            }
-            
-            return null;
-        }
-
-
     }
 }
