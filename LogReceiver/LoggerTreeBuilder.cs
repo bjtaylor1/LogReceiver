@@ -61,6 +61,10 @@ namespace LogReceiver
                         
                         _allNodes[currentPath] = newNode;
                         currentNode = newNode;
+                        
+                        // Update parent states to reflect the new child
+                        // This ensures parents become indeterminate if they have mixed children
+                        newNode.Parent?.UpdateCheckStateFromChildren();
                     }
                 }
 

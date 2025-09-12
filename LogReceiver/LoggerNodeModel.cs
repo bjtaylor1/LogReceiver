@@ -157,7 +157,7 @@ namespace LogReceiver
             }
         }
 
-        private void UpdateCheckStateFromChildren()
+        internal void UpdateCheckStateFromChildren()
         {
             if (!HasChildren) return;
 
