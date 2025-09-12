@@ -1,6 +1,4 @@
-using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace LogReceiver
 {
@@ -109,40 +107,9 @@ namespace LogReceiver
                     return node.CheckState == CheckState.Checked;
                 }
 
-                // If logger doesn't exist in tree yet, it should be enabled by default
-                // New loggers will inherit their parent's state when added to the tree
+                // Defensive: This should not happen in normal operation since AddLogger()
+                // is always called before IsLoggerEnabled(), but return true as fallback
                 return true;
-            }
-        }
-
-        /// <summary>
-        /// Gets a node by its full logger name
-        /// </summary>
-        public LoggerNodeModel GetNode(string loggerName)
-        {
-            lock (_lockObject)
-            {
-                _allNodes.TryGetValue(loggerName, out var node);
-                return node;
-            }
-        }
-
-        /// <summary>
-        /// Gets all nodes that match a search filter
-        /// </summary>
-        public IEnumerable<LoggerNodeModel> SearchNodes(string searchText)
-        {
-            if (string.IsNullOrEmpty(searchText))
-            {
-                return _rootNode.Children;
-            }
-
-            lock (_lockObject)
-            {
-                // Take a snapshot to avoid collection modification during enumeration
-                return _allNodes.Values
-                    .Where(node => node.FullLoggerName.IndexOf(searchText, StringComparison.OrdinalIgnoreCase) >= 0)
-                    .ToList(); // Materialize to avoid holding lock during enumeration
             }
         }
     }

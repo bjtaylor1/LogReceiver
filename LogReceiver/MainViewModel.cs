@@ -29,7 +29,6 @@ namespace LogReceiver
         private readonly LoggerTreeBuilder loggerTreeBuilder;
         private string searchText;
         private string loggerSearchText;
-        private bool filterApplied = false;
         public LoggerNodeModel LoggerTreeRoot => loggerTreeBuilder.RootNode;
 
         // Filtered tree view for performance

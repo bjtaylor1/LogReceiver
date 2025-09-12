@@ -19,9 +19,15 @@ namespace LogReceiver
         private CheckState _checkState = CheckState.Checked;
         private bool _isExpanded = false;
         private readonly ObservableCollection<LoggerNodeModel> _children = new ObservableCollection<LoggerNodeModel>();
+        private readonly ReadOnlyObservableCollection<LoggerNodeModel> _readOnlyChildren;
         private bool _suppressEvents = false;
 
         public static event Action<LoggerNodeModel> CheckStateChanged;
+
+        public LoggerNodeModel()
+        {
+            _readOnlyChildren = new ReadOnlyObservableCollection<LoggerNodeModel>(_children);
+        }
 
         public string Name { get; set; }
         public string FullLoggerName { get; set; }
@@ -100,7 +106,7 @@ namespace LogReceiver
             }
         }
 
-        public ObservableCollection<LoggerNodeModel> Children => _children;
+        public ReadOnlyObservableCollection<LoggerNodeModel> Children => _readOnlyChildren;
 
         public bool HasChildren => _children.Count > 0;
 
@@ -203,7 +209,7 @@ namespace LogReceiver
                 // Note: CheckState will be set by the caller based on inheritance logic
             };
 
-            Children.Add(newChild);
+            _children.Add(newChild);  // Use private field to add to collection
             OnPropertyChanged(nameof(HasChildren));
             return newChild;
         }
