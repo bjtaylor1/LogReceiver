@@ -19,23 +19,17 @@ namespace LogReceiver
         
         private MessageData selectedMessage;
         private bool isPaused;
-        private bool defaultLoggerOption = true;
 
         public ICommand ClearCommand { get; }
         public ICommand TogglePauseCommand { get; }
 
         public ICommand ClearSearchCommand { get; }
         public ICommand ClearLoggerSearchCommand { get; }
-        
-        
 
-        private readonly Dictionary<string, LoggerOption> loggerOptionsDictionary;
-        private readonly List<LoggerOption> loggerOptionsList;
         private readonly LoggerTreeBuilder loggerTreeBuilder;
         private string searchText;
         private string loggerSearchText;
         private bool filterApplied = false;
-        public ListCollectionView LoggerOptions { get; }
         public LoggerNodeModel LoggerTreeRoot => loggerTreeBuilder.RootNode;
 
         // Filtered tree view for performance
@@ -45,19 +39,6 @@ namespace LogReceiver
         protected void BeginInvokePropertyChanged(string propertyName)
         {
             PropertyChanged?.BeginInvoke(this, new PropertyChangedEventArgs(propertyName), null, null);
-        }
-
-        public bool DefaultLoggerOption
-        {
-            get => defaultLoggerOption;
-            set
-            {
-                if (defaultLoggerOption != value)
-                {
-                    defaultLoggerOption = value;
-                    BeginInvokePropertyChanged(nameof(DefaultLoggerOption));
-                }
-            }
         }
 
         public bool IsPaused
@@ -112,8 +93,7 @@ namespace LogReceiver
                 {
                     loggerSearchText = value;
                     BeginInvokePropertyChanged(nameof(LoggerSearchText));
-                    LoggerOptions.IsLiveFiltering = !string.IsNullOrEmpty(value);
-                    debouncedLoggerRefresh.Invoke();
+                    _filteredTreeViewModel.FilterText = value;
                 }
             }
         }
@@ -144,9 +124,6 @@ namespace LogReceiver
             App.EventAggregator.Value.GetEvent<MessageEvent>().Subscribe(AddMessage, ThreadOption.UIThread);
             eventList = new List<MessageData>();
             Events = new ListCollectionView(eventList);
-            loggerOptionsList = new List<LoggerOption>();
-            LoggerOptions = new ListCollectionView(loggerOptionsList);
-            loggerOptionsDictionary = new Dictionary<string, LoggerOption>();
             loggerTreeBuilder = new LoggerTreeBuilder();
             _filteredTreeViewModel = new FilteredLoggerTreeViewModel(loggerTreeBuilder);
             
@@ -160,17 +137,8 @@ namespace LogReceiver
             Events.LiveFilteringProperties.Add(nameof(MessageData.Level));
             Events.IsLiveFiltering = false; // We'll enable this when needed
             
-            // Set up filtering for LoggerOptions  
-            LoggerOptions.Filter = FilterLoggerOptions;
-            LoggerOptions.LiveFilteringProperties.Add(nameof(LoggerOption.Logger));
-            LoggerOptions.IsLiveFiltering = false; // We'll enable this when needed
-            
             ClearCommand = new DelegateCommand(Clear);
             TogglePauseCommand = new DelegateCommand(TogglePause);
-            AllOnCommand = new DelegateCommand(AllOn);
-            AllOffCommand = new DelegateCommand(AllOff);
-            GoToLoggerCommand = new DelegateCommand<string>(GoToLogger);
-            OnlyLoggerCommand = new DelegateCommand<string>(OnlyLogger);
             ClearSearchCommand = new DelegateCommand(ClearSearch);
             ClearLoggerSearchCommand = new DelegateCommand(ClearLoggerSearch);
             
@@ -181,7 +149,6 @@ namespace LogReceiver
             debouncedLoggerRefresh = Debouncer.Debounce(() => Application.Current.Dispatcher.Invoke(() =>
             {
                 _filteredTreeViewModel.OnLoggerStateChanged();
-                LoggerOptions.Refresh();
             }), TimeSpan.FromSeconds(0.5));
         }
 
@@ -194,53 +161,6 @@ namespace LogReceiver
         {
             LoggerSearchText = string.Empty;
             _filteredTreeViewModel.FilterText = string.Empty;
-            LoggerOptions.Refresh();
-        }
-        
-        public DelegateCommand<string> GoToLoggerCommand { get; set; }
-        public DelegateCommand<string> OnlyLoggerCommand { get; set; }
-
-        public DelegateCommand AllOffCommand { get; set; }
-
-        public DelegateCommand AllOnCommand { get; set; }
-
-        private void AllOn()
-        {
-            foreach (var logger in loggerOptionsDictionary)
-            {
-                logger.Value.IsOn = true;
-            }
-        }
-
-        private void AllOff()
-        {
-            foreach (var logger in loggerOptionsDictionary)
-            {
-                logger.Value.IsOn = false;
-            }
-        }
-
-        private void GoToLogger(string logger)
-        {
-            var lastEventOfLogger = eventList.LastOrDefault(e => e.Logger == logger);
-            if (lastEventOfLogger != null)
-            {
-                SelectedMessage = lastEventOfLogger;
-            }
-        }
-
-        private void OnlyLogger(string logger)
-        {
-            using (Events.DeferRefresh())
-            {
-                using (LoggerOptions.DeferRefresh())
-                {
-                    foreach (var loggerOption in loggerOptionsList)
-                    {
-                        loggerOption.IsOn = string.Equals(loggerOption.Logger, logger);
-                    }
-                }
-            }
         }
 
         private void TogglePause()
@@ -261,29 +181,13 @@ namespace LogReceiver
         {
             if (!IsPaused)
             {
-                // Add to hierarchical tree FIRST
+                // Add to hierarchical tree
                 var wasNewLogger = loggerTreeBuilder.AddLogger(msg.Logger);
                 
                 // Notify filtered tree view if new logger was added
                 if (wasNewLogger != null)
                 {
                     _filteredTreeViewModel.OnLoggerAdded();
-                }
-                
-                // Maintain compatibility with old system
-                LoggerOption loggerOption;
-                if (!loggerOptionsDictionary.TryGetValue(msg.Logger, out loggerOption))
-                {
-                    loggerOption = new LoggerOption(msg.Logger) { IsOn = DefaultLoggerOption };
-                    loggerOption.PropertyChanged += HandleLoggerPropertyChanged;
-                    loggerOptionsDictionary.Add(msg.Logger, loggerOption);
-                    
-                    // More efficient: just add the new item in sorted position instead of rebuilding entire list
-                    var insertIndex = loggerOptionsList.BinarySearch(loggerOption, Comparer<LoggerOption>.Create((x, y) => string.Compare(x.Logger, y.Logger)));
-                    if (insertIndex < 0) insertIndex = ~insertIndex;
-                    loggerOptionsList.Insert(insertIndex, loggerOption);
-                    
-                    LoggerOptions.Refresh();
                 }
 
                 eventList.Insert(0, msg);
@@ -296,14 +200,6 @@ namespace LogReceiver
                 // Always refresh since we have a filter applied
                 // The filter will handle the logic of what to show/hide
                 Events.Refresh();
-            }
-        }
-
-        private void HandleLoggerPropertyChanged(object sender, PropertyChangedEventArgs e)
-        {
-            if (e.PropertyName == nameof(LoggerOption.IsOn))
-            {
-                debouncedRefresh.Invoke();
             }
         }
 
@@ -333,20 +229,6 @@ namespace LogReceiver
         }
 
         /// <summary>
-        /// Filter predicate for LoggerOptions collection
-        /// </summary>
-        private bool FilterLoggerOptions(object item)
-        {
-            if (!(item is LoggerOption loggerOption))
-                return false;
-
-            if (string.IsNullOrWhiteSpace(LoggerSearchText))
-                return true;
-
-            var searchLower = LoggerSearchText.ToLowerInvariant();
-            return loggerOption.Logger?.ToLowerInvariant().Contains(searchLower) == true;
-        }
-
         /// <summary>
         /// Handles logger check state changes to update filtering
         /// </summary>
@@ -360,14 +242,6 @@ namespace LogReceiver
         public void Dispose()
         {
             LoggerNodeModel.CheckStateChanged -= OnLoggerCheckStateChanged;
-            
-            // Clean up property change subscriptions
-            foreach (var loggerOption in loggerOptionsDictionary.Values)
-            {
-                loggerOption.PropertyChanged -= HandleLoggerPropertyChanged;
-            }
-            
-            // TODO release managed resources here
         }
     }
 }

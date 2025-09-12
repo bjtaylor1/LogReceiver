@@ -57,6 +57,10 @@ namespace LogReceiver
                     else
                     {
                         var newNode = currentNode.FindOrCreateChild(part, currentPath);
+                        
+                        // New loggers always start as checked (enabled)
+                        newNode.CheckState = CheckState.Checked;
+                        
                         _allNodes[currentPath] = newNode;
                         currentNode = newNode;
                     }
@@ -75,19 +79,13 @@ namespace LogReceiver
             
             lock (_lockObject)
             {
+                // Simply get all leaf nodes that are checked - the tree structure
+                // already handles the hierarchical relationships correctly
                 foreach (var node in _allNodes.Values)
                 {
                     if (node.IsLeafNode && node.CheckState == CheckState.Checked)
                     {
                         enabledLoggers.Add(node.FullLoggerName);
-                    }
-                    else if (node.CheckState == CheckState.Checked && node.HasChildren)
-                    {
-                        // If a parent is checked, include all its leaf descendants
-                        foreach (var leafLogger in node.GetEnabledLoggerNames())
-                        {
-                            enabledLoggers.Add(leafLogger);
-                        }
                     }
                 }
             }
@@ -105,35 +103,14 @@ namespace LogReceiver
 
             lock (_lockObject)
             {
-                // Check if the exact logger is enabled
+                // Check if the exact logger exists and return its state
                 if (_allNodes.TryGetValue(loggerName, out var node))
                 {
                     return node.CheckState == CheckState.Checked;
                 }
 
-                // Check if any parent logger is enabled (for hierarchical inclusion)
-                var parts = loggerName.Split('.');
-                var currentPath = "";
-                
-                for (int i = 0; i < parts.Length; i++)
-                {
-                    currentPath = string.IsNullOrEmpty(currentPath) ? parts[i] : $"{currentPath}.{parts[i]}";
-                    
-                    if (_allNodes.TryGetValue(currentPath, out var parentNode))
-                    {
-                        if (parentNode.CheckState == CheckState.Checked)
-                        {
-                            return true;
-                        }
-                        else if (parentNode.CheckState == CheckState.Unchecked)
-                        {
-                            return false; // Explicitly disabled by parent
-                        }
-                    }
-                }
-
                 // If logger doesn't exist in tree yet, it should be enabled by default
-                // This handles the case where new loggers arrive before being added to the tree
+                // New loggers will inherit their parent's state when added to the tree
                 return true;
             }
         }

@@ -127,16 +127,6 @@ namespace LogReceiver
             }
         }
 
-        /// <summary>
-        /// Gets all enabled logger names under this node
-        /// </summary>
-        public IEnumerable<string> GetEnabledLoggerNames()
-        {
-            return GetLeafNodes()
-                .Where(node => node.CheckState == CheckState.Checked)
-                .Select(node => node.FullLoggerName);
-        }
-
         private void SetIsCheckedRecursive(bool isChecked, bool updateParent = true)
         {
             // Suppress events during recursive updates to prevent event cascade
@@ -209,8 +199,8 @@ namespace LogReceiver
             {
                 Name = name,
                 FullLoggerName = fullLoggerName,
-                Parent = this,
-                CheckState = CheckState.Checked
+                Parent = this
+                // Note: CheckState will be set by the caller based on inheritance logic
             };
 
             Children.Add(newChild);
