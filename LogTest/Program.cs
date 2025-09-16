@@ -44,6 +44,11 @@ class Program
                 parameters["level"] = "Info";
             }
             
+            if (!parameters.ContainsKey("nummessages") || string.IsNullOrWhiteSpace(parameters["nummessages"]))
+            {
+                parameters["nummessages"] = "1";
+            }
+            
             // Validate level
             if (!IsValidLogLevel(parameters["level"]))
             {
@@ -51,14 +56,32 @@ class Program
                 return;
             }
             
-            // Send the log message
-            SendLogMessage(parameters["logger"], parameters["level"], parameters["message"], parameters.GetValueOrDefault("exception"));
+            // Validate nummessages
+            if (!int.TryParse(parameters["nummessages"], out int numMessages) || numMessages < 1)
+            {
+                Console.WriteLine($"Invalid number of messages '{parameters["nummessages"]}'. Must be a positive integer.");
+                return;
+            }
+            
+            // Send the log message(s)
+            SendLogMessages(parameters["logger"], parameters["level"], parameters["message"], parameters.GetValueOrDefault("exception"), numMessages);
             
             Console.WriteLine();
-            Console.WriteLine("Log message sent successfully!");
+            if (numMessages > 1)
+            {
+                Console.WriteLine($"Successfully sent {numMessages} log messages!");
+            }
+            else
+            {
+                Console.WriteLine("Log message sent successfully!");
+            }
             Console.WriteLine($"Logger: {parameters["logger"]}");
             Console.WriteLine($"Level: {parameters["level"]}");
             Console.WriteLine($"Message: {parameters["message"]}");
+            if (numMessages > 1)
+            {
+                Console.WriteLine($"Number of messages: {numMessages}");
+            }
             if (!string.IsNullOrWhiteSpace(parameters.GetValueOrDefault("exception")))
             {
                 Console.WriteLine($"Exception: {parameters["exception"]}");
@@ -142,19 +165,30 @@ class Program
         return validLevels.Any(l => l.Equals(level, StringComparison.OrdinalIgnoreCase));
     }
     
-    static void SendLogMessage(string loggerName, string level, string message, string? exception = null)
+    static void SendLogMessages(string loggerName, string level, string message, string? exception = null, int numMessages = 1)
     {
         var targetLogger = LogManager.GetLogger(loggerName);
         var logLevel = LogLevel.FromString(level);
         
-        if (string.IsNullOrWhiteSpace(exception))
+        for (int i = 1; i <= numMessages; i++)
         {
-            targetLogger.Log(logLevel, message);
-        }
-        else
-        {
-            var ex = new Exception(exception);
-            targetLogger.Log(logLevel, ex, message);
+            string messageText = numMessages > 1 ? $"{message} (Message {i}/{numMessages})" : message;
+            
+            if (string.IsNullOrWhiteSpace(exception))
+            {
+                targetLogger.Log(logLevel, messageText);
+            }
+            else
+            {
+                var ex = new Exception(exception);
+                targetLogger.Log(logLevel, ex, messageText);
+            }
+            
+            // Add small delay between messages to simulate rapid but not instantaneous arrival
+            if (i < numMessages)
+            {
+                Thread.Sleep(10); // 10ms delay between messages
+            }
         }
     }
     
@@ -173,13 +207,15 @@ class Program
         Console.WriteLine("  -message    Log message text");
         Console.WriteLine();
         Console.WriteLine("Optional Parameters:");
-        Console.WriteLine("  -level      Log level (Trace, Debug, Info, Warn, Error, Fatal) [default: Info]");
-        Console.WriteLine("  -exception  Exception text to include with the log message");
+        Console.WriteLine("  -level       Log level (Trace, Debug, Info, Warn, Error, Fatal) [default: Info]");
+        Console.WriteLine("  -exception   Exception text to include with the log message");
+        Console.WriteLine("  -nummessages Number of messages to send rapidly [default: 1]");
         Console.WriteLine();
         Console.WriteLine("Examples:");
         Console.WriteLine("  LogTest -logger BT.Debug.Test -message \"Test message\"");
         Console.WriteLine("  LogTest -logger BT.Debug.CommandInfo -message \"Command executed\" -level Debug");
         Console.WriteLine("  LogTest -logger MyApp.Service -message \"Service error\" -level Error -exception \"Connection failed\"");
+        Console.WriteLine("  LogTest -logger BT.Debug.Test -message \"Rapid test\" -nummessages 10");
         Console.WriteLine();
         Console.WriteLine("If required parameters are missing, you will be prompted to enter them interactively.");
     }
