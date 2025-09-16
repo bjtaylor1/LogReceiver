@@ -264,7 +264,6 @@ namespace LogReceiver
         {
             if (!(item is MessageData message))
             {
-                Console.WriteLine("FilterEvents: Item is not MessageData, filtering out");
                 return false;
             }
 
@@ -272,7 +271,6 @@ namespace LogReceiver
             // Use the tree builder's IsLoggerEnabled method which handles hierarchical logic
             if (!loggerTreeBuilder.IsLoggerEnabled(message.Logger))
             {
-                Console.WriteLine($"FilterEvents: Logger '{message.Logger}' is disabled, filtering out");
                 return false;
             }
 
@@ -287,7 +285,6 @@ namespace LogReceiver
                 return matchesSearch;
             }
 
-            Console.WriteLine($"FilterEvents: Message from '{message.Logger}' passed all filters");
             return true;
         }
 
