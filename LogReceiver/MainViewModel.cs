@@ -284,11 +284,6 @@ namespace LogReceiver
                        message.Message?.ToLowerInvariant().Contains(searchLower) == true ||
                        message.Level?.ToLowerInvariant().Contains(searchLower) == true;
                        
-                if (!matchesSearch)
-                {
-                    Console.WriteLine($"FilterEvents: Message from '{message.Logger}' doesn't match search '{SearchText}', filtering out");
-                }
-                
                 return matchesSearch;
             }
 
