@@ -121,7 +121,22 @@ namespace LogReceiver
                 {
                     selectedMessage = value;
                     BeginInvokePropertyChanged(nameof(SelectedMessage));
+                    BeginInvokePropertyChanged(nameof(FormattedSelectedMessage));
                 }
+            }
+        }
+
+        public string FormattedSelectedMessage
+        {
+            get
+            {
+                if (SelectedMessage?.Message == null)
+                    return string.Empty;
+                
+                return SelectedMessage.Message
+                    .Replace("\\r\\n", Environment.NewLine)
+                    .Replace("\\n", Environment.NewLine)
+                    .Replace("\\r", Environment.NewLine);
             }
         }
 

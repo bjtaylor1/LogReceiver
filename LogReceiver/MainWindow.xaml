@@ -151,7 +151,9 @@
                           ResizeBehavior="PreviousAndNext" ResizeDirection="Rows" />
 
             <TextBox IsReadOnly="True" Grid.Row="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
-                     Text="{Binding SelectedMessage.Message}"
+                     Text="{Binding FormattedSelectedMessage}"
+                     AcceptsReturn="True"
+                     TextWrapping="Wrap"
                      VerticalScrollBarVisibility="Auto"
                      HorizontalScrollBarVisibility="Auto" />
         </Grid>
