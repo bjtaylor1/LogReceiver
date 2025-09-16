@@ -49,7 +49,9 @@ namespace LogReceiver
                 mainViewModel.OnLevelSelectionChanged(level, false);
             }
         }
-
-
+        private void DataGrid_Documents_RequestBringIntoView(object sender, RequestBringIntoViewEventArgs e)
+        {
+            e.Handled = true;      
+        }
     }
 }

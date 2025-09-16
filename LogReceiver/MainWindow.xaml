@@ -80,6 +80,7 @@
                                     <Setter Property="Background" Value="Aquamarine" />
                                 </DataTrigger>
                             </Style.Triggers>
+                            <EventSetter Event="Control.RequestBringIntoView" Handler="DataGrid_Documents_RequestBringIntoView"  />
                         </Style>
                     </DataGrid.RowStyle>
 
