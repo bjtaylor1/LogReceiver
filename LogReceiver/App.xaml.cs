@@ -1,7 +1,6 @@
 ﻿using Prism.Events;
 using System;
 using System.Diagnostics;
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -13,29 +12,33 @@ namespace LogReceiver
     /// </summary>
     public partial class App : Application
     {
-        [DllImport("kernel32.dll", SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        static extern bool AllocConsole();
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        static extern bool FreeConsole();
 
         protected override void OnStartup(StartupEventArgs e)
         {
-            // Always allocate console for debug output
-            AllocConsole();
-            Console.WriteLine("LogReceiver Console Mode - Debug output will appear here");
-            Console.WriteLine("Close this console window or press Ctrl+C to exit the application");
-            Console.WriteLine("=" + new string('=', 60));
+            // Console.WriteLine will automatically work if started from command line
+            // and will be ignored if started from GUI (no console attached)
+            Console.WriteLine("LogReceiver starting - Debug output enabled");
+            Console.WriteLine("=" + new string('=', 50));
 
             // Check for single instance
             if (!SingleInstanceManager.IsFirstInstance())
             {
                 // Another instance is already running, exit this one
                 Console.WriteLine("Another instance of LogReceiver is already running.");
+                
+                // Try console first, fallback to MessageBox
                 Console.WriteLine("Press any key to exit...");
-                Console.ReadKey();
+                var task = Task.Run(() => {
+                    try { Console.ReadKey(); } catch { }
+                });
+                
+                if (!task.Wait(2000)) // Wait 2 seconds for console input
+                {
+                    // Probably no console, show MessageBox instead
+                    MessageBox.Show("Another instance of LogReceiver is already running.", 
+                                  "LogReceiver", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                
                 Current.Shutdown();
                 return;
             }
@@ -49,12 +52,7 @@ namespace LogReceiver
             LogListener.Stop();
             SingleInstanceManager.ReleaseMutex();
             
-            // Clean up console if it was allocated
-            try
-            {
-                FreeConsole();
-            }
-            catch { /* Ignore if console wasn't allocated */ }
+            Console.WriteLine("LogReceiver shutting down...");
             
             base.OnExit(e);
         }

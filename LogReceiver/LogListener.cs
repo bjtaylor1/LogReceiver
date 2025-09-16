@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Diagnostics;
@@ -61,23 +61,11 @@ namespace LogReceiver
             {
                 Console.WriteLine($"Connection #{connectionNumber}: Waiting for TCP client connection...");
                 
-                // Wait for a client to connect with timeout
-                var acceptTask = tcpListener.AcceptTcpClientAsync();
-                var timeoutTask = Task.Delay(TimeSpan.FromSeconds(30), cancellationTokenSource.Token);
-                var completedTask = await Task.WhenAny(acceptTask, timeoutTask);
-                
-                if (completedTask == timeoutTask)
-                {
-                    Console.WriteLine($"Connection #{connectionNumber}: Timeout waiting for client connection");
-                    return;
-                }
-                
-                tcpClient = await acceptTask;
+                // ORIGINAL BUG: Wait indefinitely for client connection (no timeout)
+                tcpClient = await tcpListener.AcceptTcpClientAsync();
                 Console.WriteLine($"Connection #{connectionNumber}: TCP client connected from: {tcpClient.Client.RemoteEndPoint}");
                 
-                // Configure socket for better reliability
-                tcpClient.ReceiveTimeout = 30000; // 30 seconds
-                tcpClient.SendTimeout = 30000;    // 30 seconds
+                // ORIGINAL BUG: No socket timeout configuration
                 
                 using (tcpClient)
                 using (var stream = tcpClient.GetStream())
