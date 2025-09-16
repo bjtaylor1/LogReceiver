@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Diagnostics;
@@ -26,7 +26,7 @@ namespace LogReceiver
             {
                 tcpListener = new TcpListener(IPAddress.Loopback, port);
                 tcpListener.Start();
-                Debug.WriteLine($"Starting TCP Server on port: {port}");
+                Console.WriteLine($"Starting TCP Server on port: {port}");
                 var messageEvent = App.EventAggregator.Value.GetEvent<MessageEvent>();
                 
                 // Track connection count for diagnostics
@@ -35,17 +35,17 @@ namespace LogReceiver
                 while (!cancellationTokenSource.Token.IsCancellationRequested)
                 {
                     connectionCount++;
-                    Debug.WriteLine($"TCP Listener: Waiting for connection #{connectionCount}");
+                    Console.WriteLine($"TCP Listener: Waiting for connection #{connectionCount}");
                     await HandleClientConnection(messageEvent, connectionCount);
                 }
             }
             catch (OperationCanceledException)
             {
-                Debug.WriteLine("TCP listener stopped");
+                Console.WriteLine("TCP listener stopped");
             }
             catch (Exception e)
             {
-                Debug.WriteLine($"Fatal exception in TCP listener: {e}");
+                Console.WriteLine($"Fatal exception in TCP listener: {e}");
             }
             finally
             {
@@ -59,7 +59,7 @@ namespace LogReceiver
             TcpClient tcpClient = null;
             try
             {
-                Debug.WriteLine($"Connection #{connectionNumber}: Waiting for TCP client connection...");
+                Console.WriteLine($"Connection #{connectionNumber}: Waiting for TCP client connection...");
                 
                 // Wait for a client to connect with timeout
                 var acceptTask = tcpListener.AcceptTcpClientAsync();
@@ -68,12 +68,12 @@ namespace LogReceiver
                 
                 if (completedTask == timeoutTask)
                 {
-                    Debug.WriteLine($"Connection #{connectionNumber}: Timeout waiting for client connection");
+                    Console.WriteLine($"Connection #{connectionNumber}: Timeout waiting for client connection");
                     return;
                 }
                 
                 tcpClient = await acceptTask;
-                Debug.WriteLine($"Connection #{connectionNumber}: TCP client connected from: {tcpClient.Client.RemoteEndPoint}");
+                Console.WriteLine($"Connection #{connectionNumber}: TCP client connected from: {tcpClient.Client.RemoteEndPoint}");
                 
                 // Configure socket for better reliability
                 tcpClient.ReceiveTimeout = 30000; // 30 seconds
@@ -91,29 +91,29 @@ namespace LogReceiver
                         lastMessageTime = DateTime.Now;
                         if (messageCount % 100 == 0)
                         {
-                            Debug.WriteLine($"Connection #{connectionNumber}: Processed {messageCount} messages, last at {lastMessageTime:HH:mm:ss.fff}");
+                            Console.WriteLine($"Connection #{connectionNumber}: Processed {messageCount} messages, last at {lastMessageTime:HH:mm:ss.fff}");
                         }
                         ProcessCompleteMessage(m, messageEvent);
                     }, cancellationTokenSource.Token).ConfigureAwait(false);
                     
-                    Debug.WriteLine($"Connection #{connectionNumber}: Stream ended. Total messages processed: {messageCount}");
+                    Console.WriteLine($"Connection #{connectionNumber}: Stream ended. Total messages processed: {messageCount}");
                 }
                 
-                Debug.WriteLine($"Connection #{connectionNumber}: TCP client disconnected");
+                Console.WriteLine($"Connection #{connectionNumber}: TCP client disconnected");
             }
             catch (ObjectDisposedException)
             {
-                Debug.WriteLine($"Connection #{connectionNumber}: TCP listener disposed");
+                Console.WriteLine($"Connection #{connectionNumber}: TCP listener disposed");
                 throw new OperationCanceledException(); // Convert to cancellation to break the outer loop
             }
             catch (OperationCanceledException)
             {
-                Debug.WriteLine($"Connection #{connectionNumber}: TCP listener cancelled");
+                Console.WriteLine($"Connection #{connectionNumber}: TCP listener cancelled");
                 throw; // Re-throw to break the outer loop
             }
             catch (Exception e)
             {
-                Debug.WriteLine($"Connection #{connectionNumber}: TCP connection error: {e}");
+                Console.WriteLine($"Connection #{connectionNumber}: TCP connection error: {e}");
                 // Wait a bit before accepting the next connection
                 await Task.Delay(1000, cancellationTokenSource.Token);
             }
@@ -127,7 +127,7 @@ namespace LogReceiver
         {
             if (messageData == null)
             {
-                Debug.WriteLine("ProcessCompleteMessage: Received null message data");
+                Console.WriteLine("ProcessCompleteMessage: Received null message data");
                 return;
             }
                 
@@ -135,12 +135,12 @@ namespace LogReceiver
             {
                 if (!string.IsNullOrEmpty(messageData.Logger))
                 {
-                    Debug.WriteLine($"ProcessCompleteMessage: Publishing message from logger '{messageData.Logger}', Level: {messageData.Level}");
+                    Console.WriteLine($"ProcessCompleteMessage: Publishing message from logger '{messageData.Logger}', Level: {messageData.Level}");
                     messageEvent.Publish(messageData);
                 }
                 else
                 {
-                    Debug.WriteLine("ProcessCompleteMessage: Received message with empty logger name, creating system error message");
+                    Console.WriteLine("ProcessCompleteMessage: Received message with empty logger name, creating system error message");
                     messageEvent.Publish(new MessageData
                     {
                         Level = "ERROR",
@@ -152,7 +152,7 @@ namespace LogReceiver
             }
             catch (Exception e)
             {
-                Debug.WriteLine($"ProcessCompleteMessage: Error processing message: {e}");
+                Console.WriteLine($"ProcessCompleteMessage: Error processing message: {e}");
                 messageEvent.Publish(new MessageData
                 {
                     Level = "ERROR",
@@ -173,7 +173,7 @@ namespace LogReceiver
             }
             catch (Exception e)
             {
-                Debug.WriteLine($"Error stopping TCP listener: {e}");
+                Console.WriteLine($"Error stopping TCP listener: {e}");
             }
             
             // Ensure the stopped event is always set

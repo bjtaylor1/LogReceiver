@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -181,7 +181,7 @@ namespace LogReceiver
             totalMessagesReceived = 0;
             messagesReceivedSinceLastDiagnostic = 0;
             lastMessageReceived = DateTime.MinValue;
-            Debug.WriteLine("MainViewModel: Event list cleared, counters reset");
+            Console.WriteLine("MainViewModel: Event list cleared, counters reset");
         }
 
         private void ShowDiagnostics()
@@ -190,25 +190,25 @@ namespace LogReceiver
             var timeSinceLastMessage = lastMessageReceived == DateTime.MinValue ? 
                 TimeSpan.MaxValue : now - lastMessageReceived;
             
-            Debug.WriteLine("=== DIAGNOSTICS ===");
-            Debug.WriteLine($"Current Time: {now:yyyy-MM-dd HH:mm:ss.fff}");
-            Debug.WriteLine($"IsPaused: {IsPaused}");
-            Debug.WriteLine($"Total Messages in List: {eventList.Count}");
-            Debug.WriteLine($"Total Messages Received: {totalMessagesReceived}");
-            Debug.WriteLine($"Messages Since Last Diagnostic: {messagesReceivedSinceLastDiagnostic}");
-            Debug.WriteLine($"Last Message Received: {(lastMessageReceived == DateTime.MinValue ? "NEVER" : lastMessageReceived.ToString("yyyy-MM-dd HH:mm:ss.fff"))}");
-            Debug.WriteLine($"Time Since Last Message: {(timeSinceLastMessage == TimeSpan.MaxValue ? "N/A" : timeSinceLastMessage.ToString(@"mm\:ss\.fff"))}");
-            Debug.WriteLine($"Events Collection Count: {Events.Count}");
-            Debug.WriteLine($"Events IsLiveFiltering: {Events.IsLiveFiltering}");
-            Debug.WriteLine($"Search Text: '{SearchText ?? "NULL"}'");
-            Debug.WriteLine($"Logger Search Text: '{LoggerSearchText ?? "NULL"}'");
-            Debug.WriteLine($"Logger Tree Root Children: {LoggerTreeRoot?.Children?.Count ?? 0}");
+            Console.WriteLine("=== DIAGNOSTICS ===");
+            Console.WriteLine($"Current Time: {now:yyyy-MM-dd HH:mm:ss.fff}");
+            Console.WriteLine($"IsPaused: {IsPaused}");
+            Console.WriteLine($"Total Messages in List: {eventList.Count}");
+            Console.WriteLine($"Total Messages Received: {totalMessagesReceived}");
+            Console.WriteLine($"Messages Since Last Diagnostic: {messagesReceivedSinceLastDiagnostic}");
+            Console.WriteLine($"Last Message Received: {(lastMessageReceived == DateTime.MinValue ? "NEVER" : lastMessageReceived.ToString("yyyy-MM-dd HH:mm:ss.fff"))}");
+            Console.WriteLine($"Time Since Last Message: {(timeSinceLastMessage == TimeSpan.MaxValue ? "N/A" : timeSinceLastMessage.ToString(@"mm\:ss\.fff"))}");
+            Console.WriteLine($"Events Collection Count: {Events.Count}");
+            Console.WriteLine($"Events IsLiveFiltering: {Events.IsLiveFiltering}");
+            Console.WriteLine($"Search Text: '{SearchText ?? "NULL"}'");
+            Console.WriteLine($"Logger Search Text: '{LoggerSearchText ?? "NULL"}'");
+            Console.WriteLine($"Logger Tree Root Children: {LoggerTreeRoot?.Children?.Count ?? 0}");
             
             // Check event aggregator subscription
             var messageEvent = App.EventAggregator.Value.GetEvent<MessageEvent>();
-            Debug.WriteLine($"MessageEvent Subscribers: {messageEvent.GetType().GetField("subscriptions", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.GetValue(messageEvent) != null}");
+            Console.WriteLine($"MessageEvent Subscribers: {messageEvent.GetType().GetField("subscriptions", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.GetValue(messageEvent) != null}");
             
-            Debug.WriteLine("==================");
+            Console.WriteLine("==================");
             
             // Reset diagnostic counter
             messagesReceivedSinceLastDiagnostic = 0;
@@ -223,7 +223,7 @@ namespace LogReceiver
             messagesReceivedSinceLastDiagnostic++;
             lastMessageReceived = DateTime.Now;
             
-            Debug.WriteLine($"MainViewModel.AddMessage: Received message #{totalMessagesReceived} from '{msg.Logger}' at {lastMessageReceived:HH:mm:ss.fff}, IsPaused: {IsPaused}");
+            Console.WriteLine($"MainViewModel.AddMessage: Received message #{totalMessagesReceived} from '{msg.Logger}' at {lastMessageReceived:HH:mm:ss.fff}, IsPaused: {IsPaused}");
             
             if (!IsPaused)
             {
@@ -233,27 +233,27 @@ namespace LogReceiver
                 // Notify filtered tree view if new logger was added
                 if (wasNewLogger != null)
                 {
-                    Debug.WriteLine($"MainViewModel.AddMessage: New logger added: {wasNewLogger.FullLoggerName}");
+                    Console.WriteLine($"MainViewModel.AddMessage: New logger added: {wasNewLogger.FullLoggerName}");
                     _filteredTreeViewModel.OnLoggerAdded();
                 }
 
                 eventList.Insert(0, msg);
-                Debug.WriteLine($"MainViewModel.AddMessage: Added to eventList, new count: {eventList.Count}");
+                Console.WriteLine($"MainViewModel.AddMessage: Added to eventList, new count: {eventList.Count}");
 
                 if (eventList.Count > 5000)
                 {
                     eventList.RemoveRange(3000, 2000);
-                    Debug.WriteLine("MainViewModel.AddMessage: Trimmed eventList from 5000 to 3000 items");
+                    Console.WriteLine("MainViewModel.AddMessage: Trimmed eventList from 5000 to 3000 items");
                 }
                 
                 // Always refresh since we have a filter applied
                 // The filter will handle the logic of what to show/hide
                 Events.Refresh();
-                Debug.WriteLine($"MainViewModel.AddMessage: Called Events.Refresh(), Events.Count: {Events.Count}");
+                Console.WriteLine($"MainViewModel.AddMessage: Called Events.Refresh(), Events.Count: {Events.Count}");
             }
             else
             {
-                Debug.WriteLine("MainViewModel.AddMessage: Skipped processing because IsPaused is true");
+                Console.WriteLine("MainViewModel.AddMessage: Skipped processing because IsPaused is true");
             }
         }
 
@@ -264,7 +264,7 @@ namespace LogReceiver
         {
             if (!(item is MessageData message))
             {
-                Debug.WriteLine("FilterEvents: Item is not MessageData, filtering out");
+                Console.WriteLine("FilterEvents: Item is not MessageData, filtering out");
                 return false;
             }
 
@@ -272,7 +272,7 @@ namespace LogReceiver
             // Use the tree builder's IsLoggerEnabled method which handles hierarchical logic
             if (!loggerTreeBuilder.IsLoggerEnabled(message.Logger))
             {
-                Debug.WriteLine($"FilterEvents: Logger '{message.Logger}' is disabled, filtering out");
+                Console.WriteLine($"FilterEvents: Logger '{message.Logger}' is disabled, filtering out");
                 return false;
             }
 
@@ -286,13 +286,13 @@ namespace LogReceiver
                        
                 if (!matchesSearch)
                 {
-                    Debug.WriteLine($"FilterEvents: Message from '{message.Logger}' doesn't match search '{SearchText}', filtering out");
+                    Console.WriteLine($"FilterEvents: Message from '{message.Logger}' doesn't match search '{SearchText}', filtering out");
                 }
                 
                 return matchesSearch;
             }
 
-            Debug.WriteLine($"FilterEvents: Message from '{message.Logger}' passed all filters");
+            Console.WriteLine($"FilterEvents: Message from '{message.Logger}' passed all filters");
             return true;
         }
 

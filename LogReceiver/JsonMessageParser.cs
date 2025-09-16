@@ -12,7 +12,7 @@ namespace LogReceiver
     {
         public static async Task ProcessAsync<T>(Stream input, Action<T> messageReceived, CancellationToken cancellationToken)
         {
-            Debug.WriteLine("JsonMessageParser.ProcessAsync: Starting to process stream");
+            Console.WriteLine("JsonMessageParser.ProcessAsync: Starting to process stream");
             int messageCount = 0;
             var startTime = DateTime.Now;
             
@@ -23,11 +23,11 @@ namespace LogReceiver
             {
                 try
                 {
-                    Debug.WriteLine($"JsonMessageParser.ProcessAsync: Waiting for next message, processed {messageCount} so far");
+                    Console.WriteLine($"JsonMessageParser.ProcessAsync: Waiting for next message, processed {messageCount} so far");
                     
                     if (!await reader.ReadAsync(cancellationToken))
                     {
-                        Debug.WriteLine("JsonMessageParser.ProcessAsync: No more data to read, ending");
+                        Console.WriteLine("JsonMessageParser.ProcessAsync: No more data to read, ending");
                         break;
                     }
                     
@@ -39,23 +39,23 @@ namespace LogReceiver
                     
                     messageCount++;
                     var elapsed = DateTime.Now - startTime;
-                    Debug.WriteLine($"JsonMessageParser.ProcessAsync: Deserialized message #{messageCount} after {elapsed.TotalSeconds:F2} seconds");
+                    Console.WriteLine($"JsonMessageParser.ProcessAsync: Deserialized message #{messageCount} after {elapsed.TotalSeconds:F2} seconds");
                     
                     messageReceived(data);
                     
                     if (messageCount % 50 == 0)
                     {
-                        Debug.WriteLine($"JsonMessageParser.ProcessAsync: Processed {messageCount} messages in {elapsed.TotalSeconds:F2} seconds");
+                        Console.WriteLine($"JsonMessageParser.ProcessAsync: Processed {messageCount} messages in {elapsed.TotalSeconds:F2} seconds");
                     }
                 }
                 catch (Exception e)
                 {
-                    Debug.WriteLine($"JsonMessageParser.ProcessAsync: Error reading from TCP stream: {e}");
+                    Console.WriteLine($"JsonMessageParser.ProcessAsync: Error reading from TCP stream: {e}");
                     break;
                 }
             }
 
-            Debug.WriteLine($"JsonMessageParser.ProcessAsync: Finished processing stream, total messages: {messageCount}");
+            Console.WriteLine($"JsonMessageParser.ProcessAsync: Finished processing stream, total messages: {messageCount}");
         }
     }
     
