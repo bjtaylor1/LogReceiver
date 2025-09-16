@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29306.81
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LogReceiver", "LogReceiver\LogReceiver.csproj", "{1B108FAF-DA44-48A6-B755-8197A518840C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LogReceiver", "LogReceiver\LogReceiver.csproj", "{1B108FAF-DA44-48A6-B755-8197A518840C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LogReceiverTests", "LogReceiverTests\LogReceiverTests.csproj", "{4C24743C-E88C-4D38-A049-B4C34395569F}"
 EndProject
