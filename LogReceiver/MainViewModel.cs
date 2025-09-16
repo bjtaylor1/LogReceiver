@@ -39,7 +39,17 @@ namespace LogReceiver
 
         protected void BeginInvokePropertyChanged(string propertyName)
         {
-            PropertyChanged?.BeginInvoke(this, new PropertyChangedEventArgs(propertyName), null, null);
+            if (Application.Current?.Dispatcher != null)
+            {
+                Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+                }));
+            }
+            else
+            {
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            }
         }
 
         public bool IsPaused
