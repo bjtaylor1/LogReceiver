@@ -1,3 +1,4 @@
+#nullable disable
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -223,8 +224,6 @@ namespace LogReceiver
             messagesReceivedSinceLastDiagnostic++;
             lastMessageReceived = DateTime.Now;
             
-            Console.WriteLine($"MainViewModel.AddMessage: Received message #{totalMessagesReceived} from '{msg.Logger}' at {lastMessageReceived:HH:mm:ss.fff}, IsPaused: {IsPaused}");
-            
             if (!IsPaused)
             {
                 // Add to hierarchical tree
@@ -233,27 +232,19 @@ namespace LogReceiver
                 // Notify filtered tree view if new logger was added
                 if (wasNewLogger != null)
                 {
-                    Console.WriteLine($"MainViewModel.AddMessage: New logger added: {wasNewLogger.FullLoggerName}");
                     _filteredTreeViewModel.OnLoggerAdded();
                 }
 
                 eventList.Insert(0, msg);
-                Console.WriteLine($"MainViewModel.AddMessage: Added to eventList, new count: {eventList.Count}");
 
                 if (eventList.Count > 5000)
                 {
                     eventList.RemoveRange(3000, 2000);
-                    Console.WriteLine("MainViewModel.AddMessage: Trimmed eventList from 5000 to 3000 items");
                 }
                 
                 // Always refresh since we have a filter applied
                 // The filter will handle the logic of what to show/hide
                 Events.Refresh();
-                Console.WriteLine($"MainViewModel.AddMessage: Called Events.Refresh(), Events.Count: {Events.Count}");
-            }
-            else
-            {
-                Console.WriteLine("MainViewModel.AddMessage: Skipped processing because IsPaused is true");
             }
         }
 

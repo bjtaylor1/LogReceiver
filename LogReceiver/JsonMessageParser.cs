@@ -1,3 +1,4 @@
+#nullable disable
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -23,8 +24,6 @@ namespace LogReceiver
             {
                 try
                 {
-                    Console.WriteLine($"JsonMessageParser.ProcessAsync: Waiting for next message, processed {messageCount} so far");
-                    
                     if (!await reader.ReadAsync(cancellationToken))
                     {
                         Console.WriteLine("JsonMessageParser.ProcessAsync: No more data to read, ending");
@@ -39,14 +38,8 @@ namespace LogReceiver
                     
                     messageCount++;
                     var elapsed = DateTime.Now - startTime;
-                    Console.WriteLine($"JsonMessageParser.ProcessAsync: Deserialized message #{messageCount} after {elapsed.TotalSeconds:F2} seconds");
                     
                     messageReceived(data);
-                    
-                    if (messageCount % 50 == 0)
-                    {
-                        Console.WriteLine($"JsonMessageParser.ProcessAsync: Processed {messageCount} messages in {elapsed.TotalSeconds:F2} seconds");
-                    }
                 }
                 catch (Exception e)
                 {
