@@ -35,6 +35,7 @@ class Program
     // All possible logger names and unused queue for unique-first cycling
     private static readonly List<string> allPossibleLoggers = new List<string>();
     private static readonly Queue<string> allPossibleLoggersUnused = new Queue<string>();
+    private static bool hasExhaustedUniqueLoggers = false;
     
     static void Main(string[] args)
     {
@@ -216,6 +217,15 @@ class Program
         }
         else
         {
+            // First time exhausting unique loggers - print warning once
+            if (!hasExhaustedUniqueLoggers)
+            {
+                hasExhaustedUniqueLoggers = true;
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine($"\n[{DateTime.Now:HH:mm:ss}] All {allPossibleLoggers.Count} unique logger names have been used. Future logger names will be repetitions.\n");
+                Console.ResetColor();
+            }
+            
             // All unique names used, pick random from all possible
             return allPossibleLoggers[random.Next(allPossibleLoggers.Count)];
         }
