@@ -32,9 +32,9 @@ class Program
     
     private static readonly Random random = new Random();
     
-    // All possible logger names and unused list for unique-first cycling
+    // All possible logger names and unused queue for unique-first cycling
     private static readonly List<string> allPossibleLoggers = new List<string>();
-    private static readonly List<string> allPossibleLoggersUnused = new List<string>();
+    private static readonly Queue<string> allPossibleLoggersUnused = new Queue<string>();
     
     static void Main(string[] args)
     {
@@ -122,9 +122,13 @@ class Program
             }
         }
         
-        // Copy to unused list and shuffle for random order
-        allPossibleLoggersUnused.AddRange(allPossibleLoggers);
-        Shuffle(allPossibleLoggersUnused);
+        // Create a temporary list for shuffling, then enqueue in random order
+        var tempList = new List<string>(allPossibleLoggers);
+        Shuffle(tempList);
+        foreach (var name in tempList)
+        {
+            allPossibleLoggersUnused.Enqueue(name);
+        }
     }
     
     static void Shuffle<T>(List<T> list)
@@ -205,12 +209,10 @@ class Program
     static string GenerateLoggerName() => $"BT.{GenerateLoggerNameRandom()}";
     static string GenerateLoggerNameRandom()
     {
-        if (allPossibleLoggersUnused.Count > 0)
+        if (allPossibleLoggersUnused.TryDequeue(out var nextUnused))
         {
-            // Pick and remove the last item (randomized by initial shuffle)
-            string name = allPossibleLoggersUnused[allPossibleLoggersUnused.Count - 1];
-            allPossibleLoggersUnused.RemoveAt(allPossibleLoggersUnused.Count - 1);
-            return name;
+            // Dequeue the next item (already in random order from initialization)
+            return nextUnused;
         }
         else
         {
