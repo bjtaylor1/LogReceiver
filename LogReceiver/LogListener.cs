@@ -61,7 +61,6 @@ namespace LogReceiver
                 {
                     Console.WriteLine($"Reading message from {tcpClient.Client.Handle}");
 
-                    // STATELESS APPROACH: Use existing ProcessAsync but with a flag to stop after one message
                     int messageCount = 0;
                     await JsonMessageParser.ProcessAsync<MessageData>(stream, m =>
                     {
