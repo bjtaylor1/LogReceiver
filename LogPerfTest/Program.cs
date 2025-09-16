@@ -32,6 +32,10 @@ class Program
     
     private static readonly Random random = new Random();
     
+    // All possible logger names and unused list for unique-first cycling
+    private static readonly List<string> allPossibleLoggers = new List<string>();
+    private static readonly List<string> allPossibleLoggersUnused = new List<string>();
+    
     static void Main(string[] args)
     {
         try
@@ -43,6 +47,9 @@ class Program
             
             // Parse command line arguments
             double messagesPerSecond = ParseRate(args);
+            
+            // Initialize logger names
+            InitializeLoggerNames();
             
             Console.WriteLine($"Sending messages at rate: {messagesPerSecond:F2} messages/second");
             Console.WriteLine($"Average interval: {(1000.0 / messagesPerSecond):F0} ms between messages");
@@ -97,6 +104,40 @@ class Program
         Console.WriteLine("  LogPerfTest -rate 10  (sends 10 messages/second)");
         
         return 3.0; // Default if parsing fails
+    }
+    
+    static void InitializeLoggerNames()
+    {
+        // Generate all possible logger name combinations
+        foreach (var level0 in Level0Names)
+        {
+            allPossibleLoggers.Add(level0);
+            foreach (var level1 in Level1Names)
+            {
+                allPossibleLoggers.Add($"{level0}.{level1}");
+                foreach (var level2 in Level2Names)
+                {
+                    allPossibleLoggers.Add($"{level0}.{level1}.{level2}");
+                }
+            }
+        }
+        
+        // Copy to unused list and shuffle for random order
+        allPossibleLoggersUnused.AddRange(allPossibleLoggers);
+        Shuffle(allPossibleLoggersUnused);
+    }
+    
+    static void Shuffle<T>(List<T> list)
+    {
+        int n = list.Count;
+        while (n > 1)
+        {
+            n--;
+            int k = random.Next(n + 1);
+            T value = list[k];
+            list[k] = list[n];
+            list[n] = value;
+        }
     }
     
     static void SendMessagesLoop(double messagesPerSecond)
@@ -164,21 +205,18 @@ class Program
     static string GenerateLoggerName() => $"BT.{GenerateLoggerNameRandom()}";
     static string GenerateLoggerNameRandom()
     {
-        var level0 = Level0Names[random.Next(Level0Names.Length)];
-        
-        // 10% chance of single level logger
-        if (random.Next(10) == 0)
-            return level0;
-            
-        var level1 = Level1Names[random.Next(Level1Names.Length)];
-        
-        // 10% chance of two level logger
-        if (random.Next(10) == 0)
-            return $"{level0}.{level1}";
-            
-        // 80% chance of three level logger
-        var level2 = Level2Names[random.Next(Level2Names.Length)];
-        return $"{level0}.{level1}.{level2}";
+        if (allPossibleLoggersUnused.Count > 0)
+        {
+            // Pick and remove the last item (randomized by initial shuffle)
+            string name = allPossibleLoggersUnused[allPossibleLoggersUnused.Count - 1];
+            allPossibleLoggersUnused.RemoveAt(allPossibleLoggersUnused.Count - 1);
+            return name;
+        }
+        else
+        {
+            // All unique names used, pick random from all possible
+            return allPossibleLoggers[random.Next(allPossibleLoggers.Count)];
+        }
     }
     
     static void ShowStatistics()
