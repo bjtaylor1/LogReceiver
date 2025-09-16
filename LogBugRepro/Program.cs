@@ -77,16 +77,28 @@ namespace LogBugRepro
                 Console.WriteLine("Watch LogReceiver - the message count should stop increasing...");
                 Console.WriteLine();
 
+                // Wait a bit more for connection to fully close
+                Thread.Sleep(3000);
+
+                Console.WriteLine("Reinitializing NLog to create new connection...");
                 // Reinitialize NLog to create a NEW connection attempt
                 LogManager.ReconfigExistingLoggers();
+                
+                // Wait a moment for NLog to initialize
+                Thread.Sleep(2000);
                 
                 // Now send test messages that should NOT appear in LogReceiver
                 for (int i = 1; i <= 20 && keepRunning; i++)
                 {
                     try 
                     {
+                        Console.WriteLine($"  Attempting to send test message #{i}...");
                         logger.Error($"*** BUG TEST MESSAGE #{i} *** - This should NOT appear in LogReceiver UI!");
                         messageCount++;
+                        
+                        // Force NLog to flush each message
+                        LogManager.Flush(TimeSpan.FromSeconds(2));
+                        
                         Console.WriteLine($"  Sent test message #{i} - Check if it appears in LogReceiver...");
                         Thread.Sleep(1000); // 1 second between messages for easy observation
                     }
