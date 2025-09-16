@@ -73,6 +73,9 @@
                                 <DataTrigger Binding="{Binding Level}" Value="ERROR">
                                     <Setter Property="Foreground" Value="Red" />
                                 </DataTrigger>
+                                <DataTrigger Binding="{Binding Level}" Value="Error">
+                                    <Setter Property="Foreground" Value="Red" />
+                                </DataTrigger>
                                 <DataTrigger Binding="{Binding IsHighlighted}" Value="true">
                                     <Setter Property="Background" Value="Aquamarine" />
                                 </DataTrigger>
@@ -100,6 +103,8 @@
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="120"/>
                     </Grid.RowDefinitions>
                     
                     <!-- Logger Filter -->
@@ -130,6 +135,20 @@
                             </Style>
                         </TreeView.ItemContainerStyle>
                     </TreeView>
+
+                    <!-- Level Filter Label -->
+                    <Label Grid.Row="2" Content="Levels:" Margin="5,5,5,0"/>
+                    
+                    <!-- Level Filter -->
+                    <ListBox Grid.Row="3" Margin="5" ItemsSource="{Binding AllLevels}" x:Name="LevelFilterListBox">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <CheckBox Content="{Binding}" IsChecked="True" 
+                                         Checked="LevelCheckBox_Checked" 
+                                         Unchecked="LevelCheckBox_Unchecked"/>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
                 </Grid>
 
                 <Grid>
@@ -151,7 +170,7 @@
                           ResizeBehavior="PreviousAndNext" ResizeDirection="Rows" />
 
             <TextBox IsReadOnly="True" Grid.Row="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
-                     Text="{Binding FormattedSelectedMessage}"
+                     Text="{Binding FormattedSelectedMessage, Mode=OneWay}"
                      AcceptsReturn="True"
                      TextWrapping="Wrap"
                      VerticalScrollBarVisibility="Auto"

@@ -23,7 +23,7 @@ namespace LogReceiver
             Closing += HandleClosing;
         }
 
-        private void HandleClosing(object sender, CancelEventArgs e)
+        private void HandleClosing(object? sender, CancelEventArgs e)
         {
             LogListener.Stop();
             if (!LogListener.StoppedEvent.Wait(TimeSpan.FromSeconds(2)))
@@ -32,6 +32,22 @@ namespace LogReceiver
                     "LogReceiver", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
             else Debug.WriteLine("The listener reported stopped.");
+        }
+
+        private void LevelCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            if (sender is System.Windows.Controls.CheckBox checkBox && checkBox.Content is string level)
+            {
+                mainViewModel.OnLevelSelectionChanged(level, true);
+            }
+        }
+
+        private void LevelCheckBox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            if (sender is System.Windows.Controls.CheckBox checkBox && checkBox.Content is string level)
+            {
+                mainViewModel.OnLevelSelectionChanged(level, false);
+            }
         }
 
 

@@ -37,6 +37,24 @@ namespace LogReceiver
         private FilteredLoggerTreeViewModel _filteredTreeViewModel;
         public FilteredLoggerTreeViewModel FilteredTreeViewModel => _filteredTreeViewModel;
 
+        // Level filtering
+        private readonly HashSet<string> _allLevels = new HashSet<string>();
+        private readonly HashSet<string> _selectedLevels = new HashSet<string>();
+        private readonly object _levelsLock = new object();
+        
+        public IEnumerable<string> AllLevels
+        {
+            get
+            {
+                lock (_levelsLock)
+                {
+                    return _allLevels.OrderBy(l => l).ToList();
+                }
+            }
+        }
+        
+        public HashSet<string> SelectedLevels => _selectedLevels;
+
         protected void BeginInvokePropertyChanged(string propertyName)
         {
             if (Application.Current?.Dispatcher != null)
@@ -203,6 +221,15 @@ namespace LogReceiver
         private void Clear()
         {
             eventList.Clear();
+            
+            // Clear level collections
+            lock (_levelsLock)
+            {
+                _allLevels.Clear();
+                _selectedLevels.Clear();
+                BeginInvokePropertyChanged(nameof(AllLevels));
+            }
+            
             Events.Refresh();
             totalMessagesReceived = 0;
             messagesReceivedSinceLastDiagnostic = 0;
@@ -251,6 +278,21 @@ namespace LogReceiver
             
             if (!IsPaused)
             {
+                // Add level to the collection if it's new
+                if (!string.IsNullOrWhiteSpace(msg.Level))
+                {
+                    lock (_levelsLock)
+                    {
+                        var wasNew = _allLevels.Add(msg.Level);
+                        if (wasNew)
+                        {
+                            // New levels are selected by default
+                            _selectedLevels.Add(msg.Level);
+                            BeginInvokePropertyChanged(nameof(AllLevels));
+                        }
+                    }
+                }
+                
                 // Add to hierarchical tree
                 var wasNewLogger = loggerTreeBuilder.AddLogger(msg.Logger);
                 
@@ -290,6 +332,18 @@ namespace LogReceiver
                 return false;
             }
 
+            // Check level filtering (AND logic with logger filtering)
+            if (!string.IsNullOrWhiteSpace(message.Level))
+            {
+                lock (_levelsLock)
+                {
+                    if (!_selectedLevels.Contains(message.Level))
+                    {
+                        return false;
+                    }
+                }
+            }
+
             // Check search text filter
             if (!string.IsNullOrWhiteSpace(SearchText))
             {
@@ -302,6 +356,27 @@ namespace LogReceiver
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// Handles level selection changes to update filtering
+        /// </summary>
+        public void OnLevelSelectionChanged(string level, bool isSelected)
+        {
+            lock (_levelsLock)
+            {
+                if (isSelected)
+                {
+                    _selectedLevels.Add(level);
+                }
+                else
+                {
+                    _selectedLevels.Remove(level);
+                }
+            }
+            
+            // Refresh the filtered events
+            debouncedRefresh.Invoke();
         }
 
         /// <summary>
