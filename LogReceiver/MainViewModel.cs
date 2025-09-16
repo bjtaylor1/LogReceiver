@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Windows;
 using System.Windows.Data;
@@ -22,9 +23,9 @@ namespace LogReceiver
 
         public ICommand ClearCommand { get; }
         public ICommand TogglePauseCommand { get; }
-
         public ICommand ClearSearchCommand { get; }
         public ICommand ClearLoggerSearchCommand { get; }
+        public ICommand DiagnosticsCommand { get; }
 
         private readonly LoggerTreeBuilder loggerTreeBuilder;
         private string searchText;
@@ -118,6 +119,11 @@ namespace LogReceiver
         public ListCollectionView Events { get; }
         private DispatcherTimer typeTimer = new DispatcherTimer();
         
+        // Diagnostics tracking
+        private DateTime lastMessageReceived = DateTime.MinValue;
+        private int totalMessagesReceived = 0;
+        private int messagesReceivedSinceLastDiagnostic = 0;
+        
         public MainViewModel()
         {
             App.EventAggregator.Value.GetEvent<MessageEvent>().Subscribe(AddMessage, ThreadOption.UIThread);
@@ -140,6 +146,7 @@ namespace LogReceiver
             TogglePauseCommand = new DelegateCommand(TogglePause);
             ClearSearchCommand = new DelegateCommand(ClearSearch);
             ClearLoggerSearchCommand = new DelegateCommand(ClearLoggerSearch);
+            DiagnosticsCommand = new DelegateCommand(ShowDiagnostics);
             
             debouncedRefresh = Debouncer.Debounce(() => Application.Current.Dispatcher.Invoke(() =>
             {
@@ -171,6 +178,40 @@ namespace LogReceiver
         {
             eventList.Clear();
             Events.Refresh();
+            totalMessagesReceived = 0;
+            messagesReceivedSinceLastDiagnostic = 0;
+            lastMessageReceived = DateTime.MinValue;
+            Debug.WriteLine("MainViewModel: Event list cleared, counters reset");
+        }
+
+        private void ShowDiagnostics()
+        {
+            var now = DateTime.Now;
+            var timeSinceLastMessage = lastMessageReceived == DateTime.MinValue ? 
+                TimeSpan.MaxValue : now - lastMessageReceived;
+            
+            Debug.WriteLine("=== DIAGNOSTICS ===");
+            Debug.WriteLine($"Current Time: {now:yyyy-MM-dd HH:mm:ss.fff}");
+            Debug.WriteLine($"IsPaused: {IsPaused}");
+            Debug.WriteLine($"Total Messages in List: {eventList.Count}");
+            Debug.WriteLine($"Total Messages Received: {totalMessagesReceived}");
+            Debug.WriteLine($"Messages Since Last Diagnostic: {messagesReceivedSinceLastDiagnostic}");
+            Debug.WriteLine($"Last Message Received: {(lastMessageReceived == DateTime.MinValue ? "NEVER" : lastMessageReceived.ToString("yyyy-MM-dd HH:mm:ss.fff"))}");
+            Debug.WriteLine($"Time Since Last Message: {(timeSinceLastMessage == TimeSpan.MaxValue ? "N/A" : timeSinceLastMessage.ToString(@"mm\:ss\.fff"))}");
+            Debug.WriteLine($"Events Collection Count: {Events.Count}");
+            Debug.WriteLine($"Events IsLiveFiltering: {Events.IsLiveFiltering}");
+            Debug.WriteLine($"Search Text: '{SearchText ?? "NULL"}'");
+            Debug.WriteLine($"Logger Search Text: '{LoggerSearchText ?? "NULL"}'");
+            Debug.WriteLine($"Logger Tree Root Children: {LoggerTreeRoot?.Children?.Count ?? 0}");
+            
+            // Check event aggregator subscription
+            var messageEvent = App.EventAggregator.Value.GetEvent<MessageEvent>();
+            Debug.WriteLine($"MessageEvent Subscribers: {messageEvent.GetType().GetField("subscriptions", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.GetValue(messageEvent) != null}");
+            
+            Debug.WriteLine("==================");
+            
+            // Reset diagnostic counter
+            messagesReceivedSinceLastDiagnostic = 0;
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -178,6 +219,12 @@ namespace LogReceiver
 
         public void AddMessage(MessageData msg)
         {
+            totalMessagesReceived++;
+            messagesReceivedSinceLastDiagnostic++;
+            lastMessageReceived = DateTime.Now;
+            
+            Debug.WriteLine($"MainViewModel.AddMessage: Received message #{totalMessagesReceived} from '{msg.Logger}' at {lastMessageReceived:HH:mm:ss.fff}, IsPaused: {IsPaused}");
+            
             if (!IsPaused)
             {
                 // Add to hierarchical tree
@@ -186,19 +233,27 @@ namespace LogReceiver
                 // Notify filtered tree view if new logger was added
                 if (wasNewLogger != null)
                 {
+                    Debug.WriteLine($"MainViewModel.AddMessage: New logger added: {wasNewLogger.FullLoggerName}");
                     _filteredTreeViewModel.OnLoggerAdded();
                 }
 
                 eventList.Insert(0, msg);
+                Debug.WriteLine($"MainViewModel.AddMessage: Added to eventList, new count: {eventList.Count}");
 
                 if (eventList.Count > 5000)
                 {
                     eventList.RemoveRange(3000, 2000);
+                    Debug.WriteLine("MainViewModel.AddMessage: Trimmed eventList from 5000 to 3000 items");
                 }
                 
                 // Always refresh since we have a filter applied
                 // The filter will handle the logic of what to show/hide
                 Events.Refresh();
+                Debug.WriteLine($"MainViewModel.AddMessage: Called Events.Refresh(), Events.Count: {Events.Count}");
+            }
+            else
+            {
+                Debug.WriteLine("MainViewModel.AddMessage: Skipped processing because IsPaused is true");
             }
         }
 
@@ -208,22 +263,36 @@ namespace LogReceiver
         private bool FilterEvents(object item)
         {
             if (!(item is MessageData message))
+            {
+                Debug.WriteLine("FilterEvents: Item is not MessageData, filtering out");
                 return false;
+            }
 
             // Check logger filtering first (most common filter)  
             // Use the tree builder's IsLoggerEnabled method which handles hierarchical logic
             if (!loggerTreeBuilder.IsLoggerEnabled(message.Logger))
+            {
+                Debug.WriteLine($"FilterEvents: Logger '{message.Logger}' is disabled, filtering out");
                 return false;
+            }
 
             // Check search text filter
             if (!string.IsNullOrWhiteSpace(SearchText))
             {
                 var searchLower = SearchText.ToLowerInvariant();
-                return message.Logger?.ToLowerInvariant().Contains(searchLower) == true ||
+                var matchesSearch = message.Logger?.ToLowerInvariant().Contains(searchLower) == true ||
                        message.Message?.ToLowerInvariant().Contains(searchLower) == true ||
                        message.Level?.ToLowerInvariant().Contains(searchLower) == true;
+                       
+                if (!matchesSearch)
+                {
+                    Debug.WriteLine($"FilterEvents: Message from '{message.Logger}' doesn't match search '{SearchText}', filtering out");
+                }
+                
+                return matchesSearch;
             }
 
+            Debug.WriteLine($"FilterEvents: Message from '{message.Logger}' passed all filters");
             return true;
         }
 
