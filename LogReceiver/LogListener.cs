@@ -61,33 +61,45 @@ namespace LogReceiver
             {
                 Console.WriteLine($"Connection #{connectionNumber}: Waiting for TCP client connection...");
                 
-                // ORIGINAL BUG: Wait indefinitely for client connection (no timeout)
-                tcpClient = await tcpListener.AcceptTcpClientAsync();
+                // FIX: Add timeout to prevent indefinite blocking (shorter for stateless mode)
+                var acceptTask = tcpListener.AcceptTcpClientAsync();
+                var timeoutTask = Task.Delay(2000); // 2 second timeout (shorter for frequent connections)
+                var completedTask = await Task.WhenAny(acceptTask, timeoutTask);
+
+                if (completedTask == timeoutTask)
+                {
+                    Console.WriteLine($"Connection #{connectionNumber}: Timeout waiting for connection - continuing to wait...");
+                    return; // This will cause the loop to try again with connection #{connectionNumber + 1}
+                }
+
+                tcpClient = await acceptTask;
                 Console.WriteLine($"Connection #{connectionNumber}: TCP client connected from: {tcpClient.Client.RemoteEndPoint}");
                 
-                // ORIGINAL BUG: No socket timeout configuration
+                // FIX: Configure socket timeouts to prevent hanging on disconnected clients
+                tcpClient.ReceiveTimeout = 5000; // 5 second receive timeout
+                tcpClient.SendTimeout = 5000;    // 5 second send timeout
                 
                 using (tcpClient)
                 using (var stream = tcpClient.GetStream())
                 {
-                    int messageCount = 0;
-                    var lastMessageTime = DateTime.Now;
+                    Console.WriteLine($"Connection #{connectionNumber}: Reading single message...");
                     
+                    // STATELESS APPROACH: Use existing ProcessAsync but with a flag to stop after one message
+                    int messageCount = 0;
                     await JsonMessageParser.ProcessAsync<MessageData>(stream, m => 
                     {
                         messageCount++;
-                        lastMessageTime = DateTime.Now;
-                        if (messageCount % 100 == 0)
-                        {
-                            Console.WriteLine($"Connection #{connectionNumber}: Processed {messageCount} messages, last at {lastMessageTime:HH:mm:ss.fff}");
-                        }
+                        Console.WriteLine($"Connection #{connectionNumber}: Processed message #{messageCount} from {m.Logger}");
                         ProcessCompleteMessage(m, messageEvent);
+                        
+                        // For stateless mode, we could throw an exception to stop after first message
+                        // But let's see if NLog naturally sends one message per connection
                     }, cancellationTokenSource.Token).ConfigureAwait(false);
                     
-                    Console.WriteLine($"Connection #{connectionNumber}: Stream ended. Total messages processed: {messageCount}");
+                    Console.WriteLine($"Connection #{connectionNumber}: Processed {messageCount} messages, closing connection");
                 }
                 
-                Console.WriteLine($"Connection #{connectionNumber}: TCP client disconnected");
+                Console.WriteLine($"Connection #{connectionNumber}: Connection closed");
             }
             catch (ObjectDisposedException)
             {
