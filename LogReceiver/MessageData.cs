@@ -26,6 +26,9 @@ namespace LogReceiver
         [JsonProperty("exception")]
         public string Exception { get; set; }
 
+        [JsonProperty("process")]
+        public string Process { get; set; }
+
         private static readonly Regex FirstLineMatch = new(@"^([^\r\n]*)");
         public string SingleLineMessage => FirstLineMatch.Match(Message ?? "").Groups[1].Value;
         

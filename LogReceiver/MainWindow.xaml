@@ -78,6 +78,7 @@
 
                     <DataGrid.Columns>
                         <DataGridTextColumn Binding="{Binding TimeStamp}" Header="Time" />
+                        <DataGridTextColumn Binding="{Binding Process}" Header="Process" />
                         <DataGridTextColumn Binding="{Binding Logger}" Header="Logger" />
                         <DataGridTextColumn Binding="{Binding SingleLineMessage}" Header="Message">
                             <DataGridTextColumn.ElementStyle>
