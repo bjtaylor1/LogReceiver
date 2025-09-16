@@ -24,7 +24,10 @@ namespace LogReceiver
                     {
                         break;
                     }
-                    var serializer = new JsonSerializer();
+                    var serializer = new JsonSerializer
+                    {
+                        DateTimeZoneHandling = DateTimeZoneHandling.Local
+                    };
                     var data = serializer.Deserialize<T>(reader);
                     messageReceived(data);
                 }
