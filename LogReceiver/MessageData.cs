@@ -25,6 +25,7 @@ namespace LogReceiver
 
         [JsonProperty("exception")]
         public string Exception { get; set; }
+        
 
         [JsonProperty("process")]
         public string Process { get; set; }

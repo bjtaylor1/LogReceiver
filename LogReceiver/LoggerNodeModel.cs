@@ -209,7 +209,19 @@ namespace LogReceiver
                 // Note: CheckState will be set by the caller based on inheritance logic
             };
 
-            _children.Add(newChild);  // Use private field to add to collection
+            // Insert in alphabetically sorted position (case-insensitive)
+            int insertIndex = 0;
+            for (int i = 0; i < _children.Count; i++)
+            {
+                if (string.Compare(_children[i].Name, name, StringComparison.OrdinalIgnoreCase) > 0)
+                {
+                    insertIndex = i;
+                    break;
+                }
+                insertIndex = i + 1;
+            }
+            
+            _children.Insert(insertIndex, newChild);
             OnPropertyChanged(nameof(HasChildren));
             return newChild;
         }

@@ -151,7 +151,7 @@ namespace LogReceiver
                 if (SelectedMessage?.Message == null)
                     return string.Empty;
                 
-                return SelectedMessage.Message
+                return $"{SelectedMessage.Message}\n\n{SelectedMessage.Exception}"
                     .Replace("\\r\\n", Environment.NewLine)
                     .Replace("\\n", Environment.NewLine)
                     .Replace("\\r", Environment.NewLine);
