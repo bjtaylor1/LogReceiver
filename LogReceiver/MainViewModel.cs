@@ -306,7 +306,18 @@ namespace LogReceiver
 
                 if (eventList.Count > 5000)
                 {
-                    eventList.RemoveRange(3000, 2000);
+                    // Remove up to 2000 items starting from index 3000, but only if they're Info level or below
+                    int removed = 0;
+                    for (int i = 3000; i < eventList.Count && removed < 2000; i++)
+                    {
+                        var level = eventList[i].Level?.ToUpper();
+                        if (level != "ERROR" && level != "WARN" && level != "WARNING")
+                        {
+                            eventList.RemoveAt(i);
+                            i--; // Adjust index after removal
+                            removed++;
+                        }
+                    }
                 }
                 
                 // Always refresh since we have a filter applied

@@ -58,23 +58,14 @@
                     <DataGrid.RowStyle>
                         <Style TargetType="DataGridRow">
                             <Style.Triggers>
-                                <DataTrigger Binding="{Binding Level}" Value="TRACE">
-                                    <Setter Property="Foreground" Value="LightGray" />
-                                </DataTrigger>
-                                <DataTrigger Binding="{Binding Level}" Value="DEBUG">
-                                    <Setter Property="Foreground" Value="LightGray" />
-                                </DataTrigger>
-                                <DataTrigger Binding="{Binding Level}" Value="INFO">
-                                    <Setter Property="Foreground" Value="Gray" />
-                                </DataTrigger>
                                 <DataTrigger Binding="{Binding Level}" Value="WARN">
-                                    <Setter Property="Foreground" Value="Orange" />
+                                    <Setter Property="Background" Value="#FFD9A3" />
                                 </DataTrigger>
                                 <DataTrigger Binding="{Binding Level}" Value="ERROR">
-                                    <Setter Property="Foreground" Value="Red" />
+                                    <Setter Property="Background" Value="#FF9999" />
                                 </DataTrigger>
                                 <DataTrigger Binding="{Binding Level}" Value="Error">
-                                    <Setter Property="Foreground" Value="Red" />
+                                    <Setter Property="Background" Value="#FF9999" />
                                 </DataTrigger>
                                 <DataTrigger Binding="{Binding IsHighlighted}" Value="true">
                                     <Setter Property="Background" Value="Aquamarine" />
