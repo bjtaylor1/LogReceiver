@@ -58,11 +58,8 @@
                     <DataGrid.RowStyle>
                         <Style TargetType="DataGridRow">
                             <Style.Triggers>
-                                <DataTrigger Binding="{Binding Level}" Value="WARN">
+                                <DataTrigger Binding="{Binding Level}" Value="Warn">
                                     <Setter Property="Background" Value="#FFD9A3" />
-                                </DataTrigger>
-                                <DataTrigger Binding="{Binding Level}" Value="ERROR">
-                                    <Setter Property="Background" Value="#FF9999" />
                                 </DataTrigger>
                                 <DataTrigger Binding="{Binding Level}" Value="Error">
                                     <Setter Property="Background" Value="#FF9999" />
